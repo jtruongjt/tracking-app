@@ -207,7 +207,7 @@ export function UpdateForm({ month, reps, totals }: { month: string; reps: RepOp
 
       <p className="muted">Last updated: {formatLastUpdated(selectedTotal?.updated_at)}</p>
 
-      <button type="submit" disabled={loading || !selectedRep}>{loading ? "Saving..." : "Save Totals"}</button>
+      <button type="submit" disabled={loading || !selectedRep}>{loading ? "Saving..." : "Submit"}</button>
       {successMessage ? <p className="notice notice-success">{successMessage}</p> : null}
       {errorMessage ? <p className="notice notice-error">{errorMessage}</p> : null}
     </form>
