@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <p className="muted">Live monthly attainment for Expansion and New Logo teams.</p>
           <nav className="nav">
             <Link href="/">Dashboard</Link>
-            <Link href="/update">Update</Link>
+            <Link href="/update">Update Performance</Link>
           </nav>
           {children}
         </main>
