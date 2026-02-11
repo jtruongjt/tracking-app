@@ -28,6 +28,20 @@ function filterBySubTeam(rows: DashboardRow[], subTeam: SubTeam): DashboardRow[]
   return rows.filter((row) => row.subTeam === subTeam);
 }
 
+function gapClass(gapValue: number): string {
+  return gapValue > 0 ? "gap-behind" : "gap-on-track";
+}
+
+function renderCurrencyGap(gapValue: number): string {
+  if (gapValue <= 0) return "On pace";
+  return `${formatCurrency(gapValue)} behind`;
+}
+
+function renderScoreGap(gapValue: number): string {
+  if (gapValue <= 0) return "On pace";
+  return `${gapValue.toFixed(1)}% behind`;
+}
+
 export default async function DashboardPage({ searchParams }: Props) {
   const resolvedSearchParams = searchParams ? await Promise.resolve(searchParams) : undefined;
   const selectedMonth = normalizeMonthParam(resolvedSearchParams?.month);
@@ -73,12 +87,13 @@ export default async function DashboardPage({ searchParams }: Props) {
                     <th>TQR</th>
                     <th>TQR Attainment</th>
                     <th>Pace</th>
+                    <th>Gap to Pace</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="muted">No reps assigned.</td>
+                      <td colSpan={5} className="muted">No reps assigned.</td>
                     </tr>
                   ) : (
                     rows.map((row) => (
@@ -87,6 +102,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                         <td>{formatCurrency(row.tqrActual)} / {formatCurrency(row.tqrTarget)}</td>
                         <td>{formatPercent(row.tqrAttainment)}</td>
                         <td><PaceBadge status={row.paceStatus} /></td>
+                        <td className={gapClass(row.tqrGapToPace)}>{renderCurrencyGap(row.tqrGapToPace)}</td>
                       </tr>
                     ))
                   )}
@@ -114,12 +130,13 @@ export default async function DashboardPage({ searchParams }: Props) {
                     <th>NL Attainment</th>
                     <th>Weighted Score</th>
                     <th>Pace</th>
+                    <th>Gap to Pace</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="muted">No reps assigned.</td>
+                      <td colSpan={8} className="muted">No reps assigned.</td>
                     </tr>
                   ) : (
                     rows.map((row) => (
@@ -131,6 +148,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                         <td>{row.nlAttainment === null ? "N/A" : formatPercent(row.nlAttainment)}</td>
                         <td>{formatScorePercent(row.weightedScore)}</td>
                         <td><PaceBadge status={row.paceStatus} /></td>
+                        <td className={gapClass(row.weightedGapToPace)}>{renderScoreGap(row.weightedGapToPace)}</td>
                       </tr>
                     ))
                   )}

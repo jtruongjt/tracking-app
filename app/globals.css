@@ -139,6 +139,15 @@ button:disabled {
   color: var(--muted);
 }
 
+.gap-on-track {
+  color: #226b3f;
+}
+
+.gap-behind {
+  color: #8b2121;
+  font-weight: 600;
+}
+
 .notice {
   margin: 0;
   padding: 0.55rem 0.65rem;

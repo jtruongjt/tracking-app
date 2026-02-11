@@ -8,15 +8,37 @@ function safeAttainment(actual: number, target: number): number {
   return actual / target;
 }
 
+function expectedToDate(target: number, elapsedRatio: number): number {
+  if (target <= 0) {
+    return 0;
+  }
+  return target * elapsedRatio;
+}
+
 function getPaceStatus(actual: number, target: number, elapsedRatio: number): PaceStatus {
   if (target <= 0) {
     return "on_track";
   }
-  const expectedNow = target * elapsedRatio;
+  const expectedNow = expectedToDate(target, elapsedRatio);
   if (expectedNow <= 0) {
     return "on_track";
   }
   const ratioVsExpected = actual / expectedNow;
+  if (ratioVsExpected >= 1) {
+    return "on_track";
+  }
+  if (ratioVsExpected >= 0.9) {
+    return "at_risk";
+  }
+  return "behind";
+}
+
+function getWeightedPaceStatus(weightedScore: number, elapsedRatio: number): PaceStatus {
+  const expectedNow = elapsedRatio * 100;
+  if (expectedNow <= 0) {
+    return "on_track";
+  }
+  const ratioVsExpected = weightedScore / expectedNow;
   if (ratioVsExpected >= 1) {
     return "on_track";
   }
@@ -53,25 +75,23 @@ export function buildDashboardRows(input: {
 
     const tqrActual = total?.tqr_actual ?? 0;
     const nlActual = rep.team === "new_logo" ? total?.nl_actual ?? 0 : null;
+    const tqrExpectedNow = expectedToDate(tqrTarget, elapsedRatio);
+    const tqrGapToPace = Math.max(0, tqrExpectedNow - tqrActual);
+    const nlExpectedNow = rep.team === "new_logo" && nlTarget !== null ? expectedToDate(nlTarget, elapsedRatio) : null;
+    const nlGapToPace = nlExpectedNow === null ? null : Math.max(0, nlExpectedNow - (nlActual ?? 0));
 
     const tqrAttainment = safeAttainment(tqrActual, tqrTarget);
     const nlAttainment = rep.team === "new_logo" && nlTarget !== null ? safeAttainment(nlActual ?? 0, nlTarget) : null;
 
     const weightedScore = teamWeightedScore(rep.team, tqrAttainment, nlAttainment);
+    const weightedExpectedNow = elapsedRatio * 100;
+    const weightedGapToPace = Math.max(0, weightedExpectedNow - weightedScore);
 
     let paceStatus: PaceStatus;
     if (rep.team === "expansion") {
       paceStatus = getPaceStatus(tqrActual, tqrTarget, elapsedRatio);
     } else {
-      const tqrPace = getPaceStatus(tqrActual, tqrTarget, elapsedRatio);
-      const nlPace = getPaceStatus(nlActual ?? 0, nlTarget ?? 0, elapsedRatio);
-      if (tqrPace === "behind" || nlPace === "behind") {
-        paceStatus = "behind";
-      } else if (tqrPace === "at_risk" || nlPace === "at_risk") {
-        paceStatus = "at_risk";
-      } else {
-        paceStatus = "on_track";
-      }
+      paceStatus = getWeightedPaceStatus(weightedScore, elapsedRatio);
     }
 
     return {
@@ -81,11 +101,17 @@ export function buildDashboardRows(input: {
       subTeam: rep.sub_team,
       tqrActual,
       tqrTarget,
+      tqrExpectedToDate: tqrExpectedNow,
+      tqrGapToPace,
       tqrAttainment,
       nlActual,
       nlTarget,
+      nlExpectedToDate: nlExpectedNow,
+      nlGapToPace,
       nlAttainment,
       weightedScore,
+      weightedExpectedToDate: weightedExpectedNow,
+      weightedGapToPace,
       paceStatus
     };
   });

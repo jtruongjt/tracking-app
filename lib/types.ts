@@ -33,10 +33,16 @@ export interface DashboardRow {
   subTeam: SubTeam;
   tqrActual: number;
   tqrTarget: number;
+  tqrExpectedToDate: number;
+  tqrGapToPace: number;
   tqrAttainment: number;
   nlActual: number | null;
   nlTarget: number | null;
+  nlExpectedToDate: number | null;
+  nlGapToPace: number | null;
   nlAttainment: number | null;
   weightedScore: number;
+  weightedExpectedToDate: number;
+  weightedGapToPace: number;
   paceStatus: PaceStatus;
 }
