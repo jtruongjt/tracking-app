@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SubTeam, Team } from "@/lib/types";
+import { DailyActivity, SubTeam, Team } from "@/lib/types";
 
 type RepOption = {
   id: string;
@@ -21,36 +21,39 @@ function labelForSubTeam(subTeam: SubTeam): string {
   return "Team Kyra";
 }
 
-type TotalEntry = {
-  rep_id: string;
-  tqr_actual: number;
-  nl_actual: number | null;
-  updated_at: string;
-};
-
 function labelForTeam(team: Team | "all"): string {
   if (team === "new_logo") return "New Logo";
   if (team === "expansion") return "Expansion";
   return "All Teams";
 }
 
-function formatLastUpdated(value?: string): string {
-  if (!value) return "No update yet this month.";
-  return new Date(value).toLocaleString();
-}
+type ActivityByRep = Pick<DailyActivity, "rep_id" | "sdr_events" | "events_created" | "events_held" | "notes">;
 
-export function UpdateForm({ month, reps, totals }: { month: string; reps: RepOption[]; totals: TotalEntry[] }) {
+export function ActivityForm({
+  activityDate,
+  reps,
+  activities,
+  initialRepId
+}: {
+  activityDate: string;
+  reps: RepOption[];
+  activities: ActivityByRep[];
+  initialRepId?: string;
+}) {
   const router = useRouter();
   const [teamFilter, setTeamFilter] = useState<Team | "all">("all");
   const [subTeamFilter, setSubTeamFilter] = useState<SubTeam | "all">("all");
-  const [repId, setRepId] = useState("");
-  const [tqr, setTqr] = useState("0");
-  const [nl, setNl] = useState("0");
+  const [repId, setRepId] = useState(initialRepId ?? "");
+  const [sdrEvents, setSdrEvents] = useState("0");
+  const [eventsCreated, setEventsCreated] = useState("0");
+  const [eventsHeld, setEventsHeld] = useState("0");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const totalsByRep = useMemo(() => new Map(totals.map((t) => [t.rep_id, t])), [totals]);
+  const activityByRep = useMemo(() => new Map(activities.map((item) => [item.rep_id, item])), [activities]);
+
   const filteredReps = useMemo(() => {
     return reps.filter((rep) => {
       if (teamFilter !== "all" && rep.team !== teamFilter) return false;
@@ -59,9 +62,7 @@ export function UpdateForm({ month, reps, totals }: { month: string; reps: RepOp
     });
   }, [reps, teamFilter, subTeamFilter]);
 
-  const selectedRep = useMemo(() => filteredReps.find((r) => r.id === repId), [repId, filteredReps]);
-  const requiresNl = selectedRep?.team === "new_logo";
-  const selectedTotal = selectedRep ? totalsByRep.get(selectedRep.id) : undefined;
+  const selectedRep = useMemo(() => filteredReps.find((rep) => rep.id === repId), [filteredReps, repId]);
 
   const subTeamOptions = useMemo(() => {
     if (teamFilter === "expansion") return (["all", "team_lucy", "team_ryan", "team_mike", "team_bridger"] as const);
@@ -70,30 +71,34 @@ export function UpdateForm({ month, reps, totals }: { month: string; reps: RepOp
   }, [teamFilter]);
 
   useEffect(() => {
+    if (!initialRepId) return;
+    const exists = reps.some((rep) => rep.id === initialRepId);
+    if (exists) setRepId(initialRepId);
+  }, [initialRepId, reps]);
+
+  useEffect(() => {
     if (!filteredReps.length || repId === "") {
       setRepId("");
       return;
     }
     const stillVisible = filteredReps.some((rep) => rep.id === repId);
-    if (!stillVisible) {
-      setRepId(filteredReps[0].id);
-    }
+    if (!stillVisible) setRepId(filteredReps[0].id);
   }, [filteredReps, repId]);
 
   useEffect(() => {
     if (!selectedRep) {
-      setTqr("0");
-      setNl("0");
+      setSdrEvents("0");
+      setEventsCreated("0");
+      setEventsHeld("0");
+      setNotes("");
       return;
     }
-    const existing = totalsByRep.get(selectedRep.id);
-    setTqr(String(existing?.tqr_actual ?? 0));
-    if (selectedRep.team === "new_logo") {
-      setNl(String(existing?.nl_actual ?? 0));
-    } else {
-      setNl("0");
-    }
-  }, [selectedRep, totalsByRep]);
+    const existing = activityByRep.get(selectedRep.id);
+    setSdrEvents(String(existing?.sdr_events ?? 0));
+    setEventsCreated(String(existing?.events_created ?? 0));
+    setEventsHeld(String(existing?.events_held ?? 0));
+    setNotes(existing?.notes ?? "");
+  }, [selectedRep, activityByRep]);
 
   useEffect(() => {
     if (!successMessage) return;
@@ -108,45 +113,44 @@ export function UpdateForm({ month, reps, totals }: { month: string; reps: RepOp
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const tqrValue = Number(tqr);
-    if (!Number.isFinite(tqrValue) || tqrValue < 0) {
-      setErrorMessage("TQR must be a non-negative number.");
+    const sdrValue = Number(sdrEvents);
+    const createdValue = Number(eventsCreated);
+    const heldValue = Number(eventsHeld);
+
+    if (!Number.isInteger(sdrValue) || sdrValue < 0) {
+      setErrorMessage("SDR events must be a non-negative integer.");
       return;
     }
-
-    let nlValue: number | null = null;
-    if (requiresNl) {
-      nlValue = Number(nl);
-      if (!Number.isFinite(nlValue) || nlValue < 0) {
-        setErrorMessage("New Logo must be a non-negative number.");
-        return;
-      }
+    if (!Number.isInteger(createdValue) || createdValue < 0) {
+      setErrorMessage("Events created must be a non-negative integer.");
+      return;
+    }
+    if (!Number.isInteger(heldValue) || heldValue < 0) {
+      setErrorMessage("Events held must be a non-negative integer.");
+      return;
     }
 
     setLoading(true);
     try {
-      const payload = {
-        repId: selectedRep.id,
-        month,
-        tqrActual: tqrValue,
-        nlActual: nlValue
-      };
-      const response = await fetch("/api/update-totals", {
+      const response = await fetch("/api/update-activity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          repId: selectedRep.id,
+          activityDate,
+          sdrEvents: sdrValue,
+          eventsCreated: createdValue,
+          eventsHeld: heldValue,
+          notes
+        })
       });
       const body = await response.json();
       if (!response.ok) {
-        setErrorMessage(body.error ?? "Failed to update totals.");
+        setErrorMessage(body.error ?? "Failed to save daily activity.");
         return;
       }
-      setSuccessMessage("Totals saved.");
-      setTeamFilter("all");
-      setSubTeamFilter("all");
-      setRepId("");
-      setTqr("0");
-      setNl("0");
+
+      setSuccessMessage("Daily activity saved.");
       router.refresh();
     } catch {
       setErrorMessage("Unexpected error. Try again.");
@@ -197,18 +201,45 @@ export function UpdateForm({ month, reps, totals }: { month: string; reps: RepOp
       </label>
 
       <label>
-        TQR Current Total
-        <input type="number" min={0} step="any" value={tqr} onChange={(e) => setTqr(e.target.value)} required />
+        SDR Events
+        <input
+          type="number"
+          min={0}
+          step={1}
+          value={sdrEvents}
+          onChange={(e) => setSdrEvents(e.target.value)}
+          required
+        />
       </label>
 
-      {requiresNl ? (
-        <label>
-          New Logo Current Total
-          <input type="number" min={0} step="any" value={nl} onChange={(e) => setNl(e.target.value)} required />
-        </label>
-      ) : null}
+      <label>
+        Events Created
+        <input
+          type="number"
+          min={0}
+          step={1}
+          value={eventsCreated}
+          onChange={(e) => setEventsCreated(e.target.value)}
+          required
+        />
+      </label>
 
-      <p className="muted">Last updated: {formatLastUpdated(selectedTotal?.updated_at)}</p>
+      <label>
+        Events Held
+        <input
+          type="number"
+          min={0}
+          step={1}
+          value={eventsHeld}
+          onChange={(e) => setEventsHeld(e.target.value)}
+          required
+        />
+      </label>
+
+      <label>
+        Notes (optional)
+        <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={240} />
+      </label>
 
       <button type="submit" disabled={loading || !selectedRep}>{loading ? "Saving..." : "Submit"}</button>
       {successMessage ? <p className="notice notice-success">{successMessage}</p> : null}

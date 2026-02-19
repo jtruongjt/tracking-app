@@ -20,7 +20,10 @@ type Props = {
 function subTeamLabel(subTeam: SubTeam): string {
   if (subTeam === "team_lucy") return "Team Lucy";
   if (subTeam === "team_ryan") return "Team Ryan";
+  if (subTeam === "team_mike") return "Team Mike";
+  if (subTeam === "team_bridger") return "Team Bridger";
   if (subTeam === "team_justin") return "Team Justin";
+  if (subTeam === "team_sydney") return "Team Sydney";
   return "Team Kyra";
 }
 
@@ -75,7 +78,7 @@ export default async function DashboardPage({ searchParams }: Props) {
 
       <section className="card">
         <h3>Expansion Tracking</h3>
-        {(["team_lucy", "team_ryan"] as SubTeam[]).map((subTeam) => {
+        {(["team_lucy", "team_ryan", "team_mike", "team_bridger"] as SubTeam[]).map((subTeam) => {
           const rows = filterBySubTeam(expansionRows, subTeam);
           return (
             <div key={subTeam} style={{ marginTop: "1rem" }}>
@@ -115,7 +118,7 @@ export default async function DashboardPage({ searchParams }: Props) {
 
       <section className="card">
         <h3>New Logo Tracking</h3>
-        {(["team_justin", "team_kyra"] as SubTeam[]).map((subTeam) => {
+        {(["team_justin", "team_kyra", "team_sydney"] as SubTeam[]).map((subTeam) => {
           const rows = filterBySubTeam(newLogoRows, subTeam);
           return (
             <div key={subTeam} style={{ marginTop: "1rem" }}>

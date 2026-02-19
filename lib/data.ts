@@ -1,7 +1,7 @@
 import { getCurrentMonthKey } from "@/lib/date";
 import { buildDashboardRows, buildTeamRollup } from "@/lib/scoring";
 import { getSupabaseAnonServerClient, getSupabaseServiceClient } from "@/lib/supabase/server";
-import { SubTeam, Team } from "@/lib/types";
+import { DailyActivity, SubTeam, Team } from "@/lib/types";
 
 export async function getActiveReps() {
   const supabase = getSupabaseAnonServerClient();
@@ -70,5 +70,51 @@ export async function upsertCurrentTotals(input: {
   };
 
   const { error } = await supabase.from("current_totals").upsert(payload, { onConflict: "rep_id,month" });
+  if (error) throw new Error(error.message);
+}
+
+export async function getDailyActivityForDate(activityDate: string) {
+  const supabase = getSupabaseAnonServerClient();
+  const { data, error } = await supabase
+    .from("daily_activity")
+    .select("rep_id,activity_date,sdr_events,events_created,events_held,notes,updated_at")
+    .eq("activity_date", activityDate)
+    .order("updated_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as DailyActivity[];
+}
+
+export async function getDailyActivityForRange(startDate: string, endDate: string) {
+  const supabase = getSupabaseAnonServerClient();
+  const { data, error } = await supabase
+    .from("daily_activity")
+    .select("rep_id,activity_date,sdr_events,events_created,events_held,notes,updated_at")
+    .gte("activity_date", startDate)
+    .lte("activity_date", endDate);
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as DailyActivity[];
+}
+
+export async function upsertDailyActivity(input: {
+  repId: string;
+  activityDate: string;
+  sdrEvents: number;
+  eventsCreated: number;
+  eventsHeld: number;
+  notes: string | null;
+}) {
+  const supabase = getSupabaseServiceClient();
+  const payload = {
+    rep_id: input.repId,
+    activity_date: input.activityDate,
+    sdr_events: input.sdrEvents,
+    events_created: input.eventsCreated,
+    events_held: input.eventsHeld,
+    notes: input.notes
+  };
+
+  const { error } = await supabase.from("daily_activity").upsert(payload, { onConflict: "rep_id,activity_date" });
   if (error) throw new Error(error.message);
 }
