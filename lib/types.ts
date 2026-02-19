@@ -1,5 +1,12 @@
 export type Team = "expansion" | "new_logo";
-export type SubTeam = "team_lucy" | "team_ryan" | "team_justin" | "team_kyra";
+export type SubTeam =
+  | "team_lucy"
+  | "team_ryan"
+  | "team_mike"
+  | "team_bridger"
+  | "team_justin"
+  | "team_kyra"
+  | "team_sydney";
 
 export interface Rep {
   id: string;
@@ -21,6 +28,16 @@ export interface CurrentTotal {
   month: string;
   tqr_actual: number;
   nl_actual: number | null;
+  updated_at: string;
+}
+
+export interface DailyActivity {
+  rep_id: string;
+  activity_date: string;
+  sdr_events: number;
+  events_created: number;
+  events_held: number;
+  notes: string | null;
   updated_at: string;
 }
 
