@@ -135,20 +135,17 @@ export default async function ActivityPage({ searchParams }: Props) {
                 <th>SDR Events</th>
                 <th>Events Created</th>
                 <th>Events Held</th>
-                <th>Leaderboard Score</th>
               </tr>
             </thead>
             <tbody>
               {expansionLeaderboard.map((rep) => {
                 const activity = activityTotalsByRepId.get(rep.id);
-                const score = (activity?.eventsCreated ?? 0) + (activity?.eventsHeld ?? 0);
                 return (
                   <tr key={rep.id}>
                     <td>{rep.name}</td>
                     <td>{activity?.sdrEvents ?? 0}</td>
                     <td>{activity?.eventsCreated ?? 0}</td>
                     <td>{activity?.eventsHeld ?? 0}</td>
-                    <td>{score}</td>
                   </tr>
                 );
               })}
@@ -165,20 +162,17 @@ export default async function ActivityPage({ searchParams }: Props) {
                 <th>SDR Events</th>
                 <th>Events Created</th>
                 <th>Events Held</th>
-                <th>Leaderboard Score</th>
               </tr>
             </thead>
             <tbody>
               {newLogoLeaderboard.map((rep) => {
                 const activity = activityTotalsByRepId.get(rep.id);
-                const score = (activity?.eventsCreated ?? 0) + (activity?.eventsHeld ?? 0);
                 return (
                   <tr key={rep.id}>
                     <td>{rep.name}</td>
                     <td>{activity?.sdrEvents ?? 0}</td>
                     <td>{activity?.eventsCreated ?? 0}</td>
                     <td>{activity?.eventsHeld ?? 0}</td>
-                    <td>{score}</td>
                   </tr>
                 );
               })}
