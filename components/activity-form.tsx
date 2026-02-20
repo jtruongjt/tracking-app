@@ -27,7 +27,7 @@ function labelForTeam(team: Team | "all"): string {
   return "All Teams";
 }
 
-type ActivityByRep = Pick<DailyActivity, "rep_id" | "sdr_events" | "events_created" | "events_held" | "notes">;
+type ActivityByRep = Pick<DailyActivity, "rep_id" | "sdr_events" | "events_created" | "events_held">;
 
 export function ActivityForm({
   activityDate,
@@ -46,7 +46,6 @@ export function ActivityForm({
   const [sdrEvents, setSdrEvents] = useState("0");
   const [eventsCreated, setEventsCreated] = useState("0");
   const [eventsHeld, setEventsHeld] = useState("0");
-  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -84,14 +83,12 @@ export function ActivityForm({
       setSdrEvents("0");
       setEventsCreated("0");
       setEventsHeld("0");
-      setNotes("");
       return;
     }
     const existing = activityByRep.get(selectedRep.id);
     setSdrEvents(String(existing?.sdr_events ?? 0));
     setEventsCreated(String(existing?.events_created ?? 0));
     setEventsHeld(String(existing?.events_held ?? 0));
-    setNotes(existing?.notes ?? "");
   }, [selectedRep, activityByRep]);
 
   useEffect(() => {
@@ -134,8 +131,7 @@ export function ActivityForm({
           activityDate,
           sdrEvents: sdrValue,
           eventsCreated: createdValue,
-          eventsHeld: heldValue,
-          notes
+          eventsHeld: heldValue
         })
       });
       const body = await response.json();
@@ -212,11 +208,6 @@ export function ActivityForm({
           onChange={(e) => setEventsHeld(e.target.value)}
           required
         />
-      </label>
-
-      <label>
-        Notes (optional)
-        <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={240} />
       </label>
 
       <button type="submit" disabled={loading || !selectedRep}>{loading ? "Saving..." : "Submit"}</button>
