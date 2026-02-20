@@ -5,8 +5,8 @@
   --ink: #123029;
   --muted: #5a6e67;
   --accent: #0f7a5c;
-  --warn: #b7791f;
-  --danger: #b83232;
+  --accent-contrast: #ffffff;
+  --accent-strong: #0d6650;
   --border: #d6e5dd;
   --surface-subtle: #f9fdfb;
   --row-alt: #f7fbf9;
@@ -18,20 +18,24 @@
   --warning-ink: #8c5b11;
   --warning-bg: #fff5df;
   --warning-border: #f0d7a5;
+  --info-ink: #1f4f7a;
+  --info-bg: #e8f2ff;
+  --info-border: #bfd8ff;
   --danger-ink: #8b2121;
   --danger-bg: #ffe5e5;
   --danger-border: #f3b5b5;
+  --focus-ring: #1a8f6c;
 }
 
 [data-theme="dark"] {
   --bg: #0f1613;
   --bg-top: #17231e;
   --surface: #18231f;
-  --ink: #d7e6df;
-  --muted: #95aba1;
+  --ink: #e3efe9;
+  --muted: #a6b9b0;
   --accent: #4fc198;
-  --warn: #f2bf6a;
-  --danger: #f07d7d;
+  --accent-contrast: #0f1714;
+  --accent-strong: #3da97f;
   --border: #2a3b34;
   --surface-subtle: #16201c;
   --row-alt: #14211c;
@@ -43,9 +47,13 @@
   --warning-ink: #f4d18b;
   --warning-bg: #3a2d16;
   --warning-border: #5a4626;
+  --info-ink: #9ac8ff;
+  --info-bg: #1b2f49;
+  --info-border: #2d4a70;
   --danger-ink: #f6a5a5;
   --danger-bg: #3a1d1d;
   --danger-border: #5d2d2d;
+  --focus-ring: #66d9b0;
 }
 
 * {
@@ -63,6 +71,14 @@ body {
 a {
   color: var(--accent);
   text-decoration: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .container {
@@ -131,17 +147,17 @@ a {
 
 .nav a.active {
   background: var(--accent);
-  color: #fff;
-  border-color: #0d6650;
+  color: var(--accent-contrast);
+  border-color: var(--accent-strong);
 }
 
 .button-link {
   display: inline-block;
   padding: 0.46rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid #0d6650;
+  border: 1px solid var(--accent-strong);
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
   font-weight: 600;
 }
 
@@ -269,21 +285,21 @@ a {
 }
 
 .badge-on_track {
-  color: #226b3f;
-  background: #e6f6eb;
-  border-color: #badfc8;
+  color: var(--success-ink);
+  background: var(--success-bg);
+  border-color: var(--success-border);
 }
 
 .badge-at_risk {
-  color: #8c5b11;
-  background: #fff5df;
-  border-color: #f0d7a5;
+  color: var(--warning-ink);
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
 }
 
 .badge-behind {
-  color: #8b2121;
-  background: #ffe5e5;
-  border-color: #f3b5b5;
+  color: var(--danger-ink);
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
 }
 
 form {
@@ -346,8 +362,12 @@ label > div > input[type="month"] {
 button {
   cursor: pointer;
   background: var(--accent);
-  color: #fff;
-  border-color: #0d6650;
+  color: var(--accent-contrast);
+  border-color: var(--accent-strong);
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-strong);
 }
 
 button:disabled {
@@ -361,11 +381,11 @@ button:disabled {
 }
 
 .gap-on-track {
-  color: #226b3f;
+  color: var(--success-ink);
 }
 
 .gap-behind {
-  color: #8b2121;
+  color: var(--danger-ink);
   font-weight: 600;
 }
 
@@ -386,6 +406,12 @@ button:disabled {
   color: var(--danger-ink);
   background: var(--danger-bg);
   border-color: var(--danger-border);
+}
+
+.notice-info {
+  color: var(--info-ink);
+  background: var(--info-bg);
+  border-color: var(--info-border);
 }
 
 .theme-toggle {
