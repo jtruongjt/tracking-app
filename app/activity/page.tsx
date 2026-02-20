@@ -178,7 +178,6 @@ export default async function ActivityPage({ searchParams }: Props) {
             <DatePickerForm
               label="Week Starting (pick any day)"
               date={resolvedWeekStart}
-              submitLabel="Load Week"
               hiddenFields={[
                 { name: "view", value: "week" },
                 { name: "team", value: teamFilter },

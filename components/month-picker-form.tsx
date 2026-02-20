@@ -5,11 +5,11 @@ import { useRef } from "react";
 type Props = {
   label: string;
   month: string;
-  submitLabel?: string;
 };
 
-export function MonthPickerForm({ label, month, submitLabel = "Load Month" }: Props) {
+export function MonthPickerForm({ label, month }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   function openPicker() {
     const input = inputRef.current;
@@ -22,15 +22,18 @@ export function MonthPickerForm({ label, month, submitLabel = "Load Month" }: Pr
     input.click();
   }
 
+  function submitOnMonthChange() {
+    formRef.current?.requestSubmit();
+  }
+
   return (
-    <form method="GET">
+    <form ref={formRef} method="GET">
       <label>
         {label}
         <div onClick={openPicker} style={{ cursor: "pointer" }}>
-          <input ref={inputRef} type="month" name="month" defaultValue={month} />
+          <input ref={inputRef} type="month" name="month" defaultValue={month} onChange={submitOnMonthChange} />
         </div>
       </label>
-      <button type="submit">{submitLabel}</button>
     </form>
   );
 }

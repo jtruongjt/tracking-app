@@ -10,6 +10,7 @@ type Props = {
 
 export function DashboardFilterForm({ month, team }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   function openPicker() {
     const input = inputRef.current;
@@ -22,12 +23,16 @@ export function DashboardFilterForm({ month, team }: Props) {
     input.click();
   }
 
+  function submitOnMonthChange() {
+    formRef.current?.requestSubmit();
+  }
+
   return (
-    <form method="GET">
+    <form ref={formRef} method="GET">
       <label>
         Live Month
         <div onClick={openPicker} style={{ cursor: "pointer" }}>
-          <input ref={inputRef} type="month" name="month" defaultValue={month} />
+          <input ref={inputRef} type="month" name="month" defaultValue={month} onChange={submitOnMonthChange} />
         </div>
       </label>
       <label>

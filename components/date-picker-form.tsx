@@ -5,12 +5,12 @@ import { useRef } from "react";
 type Props = {
   label: string;
   date: string;
-  submitLabel?: string;
   hiddenFields?: Array<{ name: string; value: string }>;
 };
 
-export function DatePickerForm({ label, date, submitLabel = "Load Date", hiddenFields = [] }: Props) {
+export function DatePickerForm({ label, date, hiddenFields = [] }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   function openPicker() {
     const input = inputRef.current;
@@ -23,18 +23,21 @@ export function DatePickerForm({ label, date, submitLabel = "Load Date", hiddenF
     input.click();
   }
 
+  function submitOnDateChange() {
+    formRef.current?.requestSubmit();
+  }
+
   return (
-    <form method="GET">
+    <form ref={formRef} method="GET">
       {hiddenFields.map((field) => (
         <input key={`${field.name}:${field.value}`} type="hidden" name={field.name} value={field.value} />
       ))}
       <label>
         {label}
         <div onClick={openPicker} style={{ cursor: "pointer" }}>
-          <input ref={inputRef} type="date" name="date" defaultValue={date} />
+          <input ref={inputRef} type="date" name="date" defaultValue={date} onChange={submitOnDateChange} />
         </div>
       </label>
-      <button type="submit">{submitLabel}</button>
     </form>
   );
 }
