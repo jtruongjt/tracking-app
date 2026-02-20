@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Link from "next/link";
 import { isDailyActivityEnabled } from "@/lib/features";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { AppNav } from "@/components/app-nav";
 
 export const metadata: Metadata = {
   title: "Sales Tracking App",
@@ -15,14 +16,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <main className="container">
-          <h1>Sales Tracking</h1>
-          <p className="muted">Live monthly attainment and daily activity for Expansion and New Logo teams.</p>
-          <nav className="nav">
-            <Link href="/">Performance Dashboard</Link>
-            <Link href="/update">Update Performance</Link>
-            {dailyActivityEnabled ? <Link href="/activity">Activity Dashboard</Link> : null}
-            {dailyActivityEnabled ? <Link href="/activity/update">Update Activity</Link> : null}
-          </nav>
+          <header className="card app-header">
+            <div>
+              <h1>Sales Tracking</h1>
+              <p className="muted">Live monthly attainment and daily activity for Expansion and New Logo teams.</p>
+            </div>
+            <div className="header-actions">
+              <ThemeToggle />
+            </div>
+            <div className="header-nav">
+              <AppNav dailyActivityEnabled={dailyActivityEnabled} />
+            </div>
+          </header>
           {children}
         </main>
       </body>

@@ -27,10 +27,10 @@ export function MonthPickerForm({ label, month }: Props) {
   }
 
   return (
-    <form ref={formRef} method="GET">
+    <form ref={formRef} method="GET" className="toolbar-form">
       <label>
         {label}
-        <div onClick={openPicker} style={{ cursor: "pointer" }}>
+        <div onClick={openPicker} className="toolbar-picker-hitbox">
           <input ref={inputRef} type="month" name="month" defaultValue={month} onChange={submitOnMonthChange} />
         </div>
       </label>

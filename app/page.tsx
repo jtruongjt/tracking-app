@@ -67,7 +67,7 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   return (
     <div className="grid">
-      <div className="card">
+      <div className="card toolbar-card">
         <h2>{toMonthLabel(month)} Dashboard</h2>
         <p className="muted">Scores: Expansion = TQR only. New Logo = 70% NL + 30% TQR.</p>
         <p className="muted">Use filters to view all teams or a single team.</p>

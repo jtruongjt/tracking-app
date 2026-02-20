@@ -44,7 +44,7 @@ export default async function ActivityUpdatePage({ searchParams }: Props) {
   const initialRepId = requestedRepId && reps.some((rep) => rep.id === requestedRepId) ? requestedRepId : undefined;
 
   return (
-    <section className="card">
+    <section className="card toolbar-card">
       <h2>Daily Activity Submission</h2>
       <p className="muted">Submit or edit rep activity for {toDateLabel(activityDate)}.</p>
       <p>

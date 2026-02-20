@@ -22,7 +22,7 @@ export default async function UpdatePage({ searchParams }: Props) {
   const [reps, totals] = await Promise.all([getActiveReps(), getCurrentTotalsForMonth(month)]);
 
   return (
-    <section className="card">
+    <section className="card toolbar-card">
       <h2>Update Totals</h2>
       <p className="muted">Overwrite current totals for {toMonthLabel(month)}.</p>
       <MonthPickerForm label="Update Month" month={month} />

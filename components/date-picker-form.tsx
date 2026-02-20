@@ -28,13 +28,13 @@ export function DatePickerForm({ label, date, hiddenFields = [] }: Props) {
   }
 
   return (
-    <form ref={formRef} method="GET">
+    <form ref={formRef} method="GET" className="toolbar-form">
       {hiddenFields.map((field) => (
         <input key={`${field.name}:${field.value}`} type="hidden" name={field.name} value={field.value} />
       ))}
       <label>
         {label}
-        <div onClick={openPicker} style={{ cursor: "pointer" }}>
+        <div onClick={openPicker} className="toolbar-picker-hitbox">
           <input ref={inputRef} type="date" name="date" defaultValue={date} onChange={submitOnDateChange} />
         </div>
       </label>

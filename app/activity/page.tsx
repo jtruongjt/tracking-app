@@ -138,10 +138,10 @@ export default async function ActivityPage({ searchParams }: Props) {
 
   return (
     <div className="grid">
-      <section className="card">
+      <section className="card toolbar-card">
         <h2>Daily Activity</h2>
         <p className="muted">View submissions and team totals by day or by week.</p>
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+        <div className="toolbar-switches">
           <a className={view === "day" ? "button-link" : "nav-toggle-link"} href={`/activity?view=day&date=${activityDate}${querySuffix}`}>
             Day View
           </a>
@@ -149,7 +149,7 @@ export default async function ActivityPage({ searchParams }: Props) {
             Week View
           </a>
         </div>
-        <form method="GET">
+        <form method="GET" className="toolbar-form">
           <input type="hidden" name="view" value={view} />
           {view === "week" ? <input type="hidden" name="weekStart" value={resolvedWeekStart} /> : <input type="hidden" name="date" value={activityDate} />}
           <label>
@@ -174,7 +174,7 @@ export default async function ActivityPage({ searchParams }: Props) {
           <button type="submit">Apply Team Filters</button>
         </form>
         {view === "week" ? (
-          <div className="grid" style={{ gap: "0.6rem" }}>
+          <div className="grid">
             <DatePickerForm
               label="Week Starting (pick any day)"
               date={resolvedWeekStart}
@@ -184,7 +184,7 @@ export default async function ActivityPage({ searchParams }: Props) {
                 { name: "subTeam", value: subTeamFilter }
               ]}
             />
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <div className="toolbar-switches">
               <a className="nav-toggle-link" href={`/activity?view=week&weekStart=${previousWeekStart}${querySuffix}`}>Previous Week</a>
               <a className="nav-toggle-link" href={`/activity?view=week&weekStart=${nextWeekStart}${querySuffix}`}>Next Week</a>
             </div>
