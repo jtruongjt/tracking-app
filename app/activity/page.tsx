@@ -202,69 +202,101 @@ export default async function ActivityPage({ searchParams }: Props) {
         )}
       </section>
 
-      <section className="card">
-        <h3>{periodLabel} Summary</h3>
-        <p>SDR Events: {totals.sdrEvents}</p>
-        <p>Events Created: {totals.eventsCreated}</p>
-        <p>Events Held: {totals.eventsHeld}</p>
+      <section className="kpi-grid">
+        <article className="kpi-card">
+          <h3>Period</h3>
+          <p className="kpi-value">{view === "week" ? "Week" : "Day"}</p>
+          <p className="kpi-note">{periodLabel}</p>
+        </article>
+        <article className="kpi-card">
+          <h3>SDR Events</h3>
+          <p className="kpi-value">{totals.sdrEvents.toLocaleString()}</p>
+          <p className="kpi-note">Across filtered reps</p>
+        </article>
+        <article className="kpi-card">
+          <h3>Events Created</h3>
+          <p className="kpi-value">{totals.eventsCreated.toLocaleString()}</p>
+          <p className="kpi-note">Across filtered reps</p>
+        </article>
+        <article className="kpi-card">
+          <h3>Events Held</h3>
+          <p className="kpi-value">{totals.eventsHeld.toLocaleString()}</p>
+          <p className="kpi-note">Across filtered reps</p>
+        </article>
       </section>
 
       <div className="grid grid-2">
         {showExpansion ? (
           <section className="card">
             <h3>Expansion Activity for {periodLabel}</h3>
-            <table className="table table-striped">
-              <thead>
-                <tr>
-                  <th>Rep</th>
-                  <th>SDR Events</th>
-                  <th>Events Created</th>
-                  <th>Events Held</th>
-                </tr>
-              </thead>
-              <tbody>
-                {expansionLeaderboard.map((rep) => {
-                  const activity = activityTotalsByRepId.get(rep.id);
-                  return (
-                    <tr key={rep.id}>
-                      <td>{rep.name}</td>
-                      <td>{activity?.sdrEvents ?? 0}</td>
-                      <td>{activity?.eventsCreated ?? 0}</td>
-                      <td>{activity?.eventsHeld ?? 0}</td>
+            <div className="table-wrap">
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Rep</th>
+                    <th className="num">SDR Events</th>
+                    <th className="num">Events Created</th>
+                    <th className="num">Events Held</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expansionLeaderboard.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="muted">No reps assigned.</td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ) : (
+                    expansionLeaderboard.map((rep) => {
+                      const activity = activityTotalsByRepId.get(rep.id);
+                      return (
+                        <tr key={rep.id}>
+                          <td>{rep.name}</td>
+                          <td className="num">{activity?.sdrEvents ?? 0}</td>
+                          <td className="num">{activity?.eventsCreated ?? 0}</td>
+                          <td className="num">{activity?.eventsHeld ?? 0}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </section>
         ) : null}
 
         {showNewLogo ? (
           <section className="card">
             <h3>New Logo Activity for {periodLabel}</h3>
-            <table className="table table-striped">
-              <thead>
-                <tr>
-                  <th>Rep</th>
-                  <th>SDR Events</th>
-                  <th>Events Created</th>
-                  <th>Events Held</th>
-                </tr>
-              </thead>
-              <tbody>
-                {newLogoLeaderboard.map((rep) => {
-                  const activity = activityTotalsByRepId.get(rep.id);
-                  return (
-                    <tr key={rep.id}>
-                      <td>{rep.name}</td>
-                      <td>{activity?.sdrEvents ?? 0}</td>
-                      <td>{activity?.eventsCreated ?? 0}</td>
-                      <td>{activity?.eventsHeld ?? 0}</td>
+            <div className="table-wrap">
+              <table className="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Rep</th>
+                    <th className="num">SDR Events</th>
+                    <th className="num">Events Created</th>
+                    <th className="num">Events Held</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {newLogoLeaderboard.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="muted">No reps assigned.</td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  ) : (
+                    newLogoLeaderboard.map((rep) => {
+                      const activity = activityTotalsByRepId.get(rep.id);
+                      return (
+                        <tr key={rep.id}>
+                          <td>{rep.name}</td>
+                          <td className="num">{activity?.sdrEvents ?? 0}</td>
+                          <td className="num">{activity?.eventsCreated ?? 0}</td>
+                          <td className="num">{activity?.eventsHeld ?? 0}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </section>
         ) : null}
       </div>

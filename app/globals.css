@@ -10,6 +10,7 @@
   --border: #d6e5dd;
   --surface-subtle: #f9fdfb;
   --row-alt: #f7fbf9;
+  --thead-bg: #eff7f2;
   --shadow-rgb: 18, 48, 41;
   --success-ink: #1f5f39;
   --success-bg: #e6f6eb;
@@ -34,6 +35,7 @@
   --border: #2a3b34;
   --surface-subtle: #16201c;
   --row-alt: #14211c;
+  --thead-bg: #22332c;
   --shadow-rgb: 0, 0, 0;
   --success-ink: #8ee2b6;
   --success-bg: #1d3329;
@@ -167,6 +169,58 @@ a {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+.kpi-grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.kpi-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.75rem 0.8rem;
+  background: var(--surface-subtle);
+}
+
+.kpi-card h3 {
+  margin: 0;
+  font-size: 0.77rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.kpi-value {
+  margin: 0.18rem 0 0.1rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.kpi-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.kpi-status-on_track {
+  color: var(--success-ink);
+}
+
+.kpi-status-at_risk {
+  color: var(--warning-ink);
+}
+
+.kpi-status-behind {
+  color: var(--danger-ink);
+}
+
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -181,6 +235,10 @@ a {
 }
 
 .table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--thead-bg);
   font-size: 0.82rem;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -190,6 +248,16 @@ a {
 
 .table-striped tbody tr:nth-child(even) {
   background: var(--row-alt);
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.table th.num,
+.table td.num {
+  text-align: right;
+  white-space: nowrap;
 }
 
 .badge {

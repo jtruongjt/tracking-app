@@ -64,6 +64,10 @@ export default async function DashboardPage({ searchParams }: Props) {
   const newLogoRows = rows.filter((r) => r.team === "new_logo");
   const showExpansion = teamFilter === "all" || teamFilter === "expansion";
   const showNewLogo = teamFilter === "all" || teamFilter === "new_logo";
+  const atRiskCount = rows.filter((row) => row.paceStatus === "at_risk").length;
+  const behindCount = rows.filter((row) => row.paceStatus === "behind").length;
+  const onTrackCount = rows.filter((row) => row.paceStatus === "on_track").length;
+  const teamsLabel = teamFilter === "all" ? "All Teams" : teamFilter === "expansion" ? "Expansion" : "New Logo";
 
   return (
     <div className="grid">
@@ -73,6 +77,40 @@ export default async function DashboardPage({ searchParams }: Props) {
         <p className="muted">Use filters to view all teams or a single team.</p>
         <DashboardFilterForm month={month} team={teamFilter} />
       </div>
+
+      <section className="kpi-grid">
+        <article className="kpi-card">
+          <h3>Reps in View</h3>
+          <p className="kpi-value">{rows.length}</p>
+          <p className="kpi-note">{teamsLabel}</p>
+        </article>
+        <article className="kpi-card">
+          <h3>On Track Reps</h3>
+          <p className="kpi-value kpi-status-on_track">{onTrackCount}</p>
+          <p className="kpi-note">At risk: {atRiskCount}</p>
+        </article>
+        <article className="kpi-card">
+          <h3>Behind Reps</h3>
+          <p className="kpi-value kpi-status-behind">{behindCount}</p>
+          <p className="kpi-note">Needs attention this month</p>
+        </article>
+        {showExpansion ? (
+          <article className="kpi-card">
+            <h3>Expansion TQR Attainment</h3>
+            <p className="kpi-value">
+              {formatPercent(data.rollup.expansion.tqrTarget > 0 ? data.rollup.expansion.tqrActual / data.rollup.expansion.tqrTarget : 0)}
+            </p>
+            <p className="kpi-note">{formatCurrency(data.rollup.expansion.tqrActual)} actual</p>
+          </article>
+        ) : null}
+        {showNewLogo ? (
+          <article className="kpi-card">
+            <h3>New Logo Weighted Avg</h3>
+            <p className="kpi-value">{formatScorePercent(data.rollup.newLogo.weightedAverage)}</p>
+            <p className="kpi-note">NL + TQR blend</p>
+          </article>
+        ) : null}
+      </section>
 
       <div className="grid grid-2">
         {showExpansion ? (
@@ -100,34 +138,36 @@ export default async function DashboardPage({ searchParams }: Props) {
             return (
               <div key={subTeam} style={{ marginTop: "1rem" }}>
                 <h4>{subTeamLabel(subTeam)}</h4>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Rep</th>
-                      <th>TQR</th>
-                      <th>TQR Attainment</th>
-                      <th>Pace</th>
-                      <th>Gap to Pace</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.length === 0 ? (
+                <div className="table-wrap">
+                  <table className="table">
+                    <thead>
                       <tr>
-                        <td colSpan={5} className="muted">No reps assigned.</td>
+                        <th>Rep</th>
+                        <th className="num">TQR</th>
+                        <th className="num">TQR Attainment</th>
+                        <th>Pace</th>
+                        <th className="num">Gap to Pace</th>
                       </tr>
-                    ) : (
-                      rows.map((row) => (
-                        <tr key={row.repId}>
-                          <td>{row.repName}</td>
-                          <td>{formatCurrency(row.tqrActual)} / {formatCurrency(row.tqrTarget)}</td>
-                          <td>{formatPercent(row.tqrAttainment)}</td>
-                          <td><PaceBadge status={row.paceStatus} /></td>
-                          <td className={gapClass(row.tqrGapToPace)}>{renderCurrencyGap(row.tqrGapToPace)}</td>
+                    </thead>
+                    <tbody>
+                      {rows.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="muted">No reps assigned.</td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        rows.map((row) => (
+                          <tr key={row.repId}>
+                            <td>{row.repName}</td>
+                            <td className="num">{formatCurrency(row.tqrActual)} / {formatCurrency(row.tqrTarget)}</td>
+                            <td className="num">{formatPercent(row.tqrAttainment)}</td>
+                            <td><PaceBadge status={row.paceStatus} /></td>
+                            <td className={`num ${gapClass(row.tqrGapToPace)}`}>{renderCurrencyGap(row.tqrGapToPace)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             );
           })}
@@ -142,40 +182,42 @@ export default async function DashboardPage({ searchParams }: Props) {
             return (
               <div key={subTeam} style={{ marginTop: "1rem" }}>
                 <h4>{subTeamLabel(subTeam)}</h4>
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Rep</th>
-                      <th>TQR</th>
-                      <th>TQR Attainment</th>
-                      <th>NL</th>
-                      <th>NL Attainment</th>
-                      <th>Weighted Score</th>
-                      <th>Pace</th>
-                      <th>Gap to Pace</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.length === 0 ? (
+                <div className="table-wrap">
+                  <table className="table">
+                    <thead>
                       <tr>
-                        <td colSpan={8} className="muted">No reps assigned.</td>
+                        <th>Rep</th>
+                        <th className="num">TQR</th>
+                        <th className="num">TQR Attainment</th>
+                        <th className="num">NL</th>
+                        <th className="num">NL Attainment</th>
+                        <th className="num">Weighted Score</th>
+                        <th>Pace</th>
+                        <th className="num">Gap to Pace</th>
                       </tr>
-                    ) : (
-                      rows.map((row) => (
-                        <tr key={row.repId}>
-                          <td>{row.repName}</td>
-                          <td>{formatCurrency(row.tqrActual)} / {formatCurrency(row.tqrTarget)}</td>
-                          <td>{formatPercent(row.tqrAttainment)}</td>
-                          <td>{row.nlActual === null || row.nlTarget === null ? "N/A" : `${row.nlActual.toLocaleString()} / ${row.nlTarget.toLocaleString()}`}</td>
-                          <td>{row.nlAttainment === null ? "N/A" : formatPercent(row.nlAttainment)}</td>
-                          <td>{formatScorePercent(row.weightedScore)}</td>
-                          <td><PaceBadge status={row.paceStatus} /></td>
-                          <td className={gapClass(row.weightedGapToPace)}>{renderScoreGap(row.weightedGapToPace)}</td>
+                    </thead>
+                    <tbody>
+                      {rows.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="muted">No reps assigned.</td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        rows.map((row) => (
+                          <tr key={row.repId}>
+                            <td>{row.repName}</td>
+                            <td className="num">{formatCurrency(row.tqrActual)} / {formatCurrency(row.tqrTarget)}</td>
+                            <td className="num">{formatPercent(row.tqrAttainment)}</td>
+                            <td className="num">{row.nlActual === null || row.nlTarget === null ? "N/A" : `${row.nlActual.toLocaleString()} / ${row.nlTarget.toLocaleString()}`}</td>
+                            <td className="num">{row.nlAttainment === null ? "N/A" : formatPercent(row.nlAttainment)}</td>
+                            <td className="num">{formatScorePercent(row.weightedScore)}</td>
+                            <td><PaceBadge status={row.paceStatus} /></td>
+                            <td className={`num ${gapClass(row.weightedGapToPace)}`}>{renderScoreGap(row.weightedGapToPace)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             );
           })}
