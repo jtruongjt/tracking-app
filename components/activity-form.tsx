@@ -41,7 +41,6 @@ export function ActivityForm({
   initialRepId?: string;
 }) {
   const router = useRouter();
-  const [teamFilter, setTeamFilter] = useState<Team | "all">("all");
   const [subTeamFilter, setSubTeamFilter] = useState<SubTeam | "all">("all");
   const [repId, setRepId] = useState(initialRepId ?? "");
   const [sdrEvents, setSdrEvents] = useState("0");
@@ -56,19 +55,14 @@ export function ActivityForm({
 
   const filteredReps = useMemo(() => {
     return reps.filter((rep) => {
-      if (teamFilter !== "all" && rep.team !== teamFilter) return false;
       if (subTeamFilter !== "all" && rep.sub_team !== subTeamFilter) return false;
       return true;
     });
-  }, [reps, teamFilter, subTeamFilter]);
+  }, [reps, subTeamFilter]);
 
   const selectedRep = useMemo(() => filteredReps.find((rep) => rep.id === repId), [filteredReps, repId]);
 
-  const subTeamOptions = useMemo(() => {
-    if (teamFilter === "expansion") return (["all", "team_lucy", "team_ryan", "team_mike", "team_bridger"] as const);
-    if (teamFilter === "new_logo") return (["all", "team_justin", "team_kyra", "team_sydney"] as const);
-    return (["all", "team_lucy", "team_ryan", "team_mike", "team_bridger", "team_justin", "team_kyra", "team_sydney"] as const);
-  }, [teamFilter]);
+  const subTeamOptions = ["all", "team_lucy", "team_ryan", "team_mike", "team_bridger", "team_justin", "team_kyra", "team_sydney"] as const;
 
   useEffect(() => {
     if (!initialRepId) return;
@@ -161,22 +155,6 @@ export function ActivityForm({
 
   return (
     <form onSubmit={onSubmit}>
-      <label>
-        Team Filter
-        <select
-          value={teamFilter}
-          onChange={(e) => {
-            const value = e.target.value as Team | "all";
-            setTeamFilter(value);
-            setSubTeamFilter("all");
-          }}
-        >
-          <option value="all">All Teams</option>
-          <option value="expansion">Expansion</option>
-          <option value="new_logo">New Logo</option>
-        </select>
-      </label>
-
       <label>
         Sub Team Filter
         <select value={subTeamFilter} onChange={(e) => setSubTeamFilter(e.target.value as SubTeam | "all")}>
