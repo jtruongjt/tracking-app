@@ -330,6 +330,18 @@ select:focus-visible {
   border-color: var(--danger-border);
 }
 
+.badge-info {
+  color: var(--info-ink);
+  background: var(--info-bg);
+  border-color: var(--info-border);
+}
+
+.badge-upcoming {
+  color: var(--muted);
+  background: var(--surface-subtle);
+  border-color: var(--border);
+}
+
 .badge-submitted {
   color: var(--success-ink);
   background: var(--success-bg);
@@ -359,6 +371,171 @@ select:focus-visible {
 
 .table tbody tr.row-missing-submission td:first-child {
   color: var(--danger-ink);
+  font-weight: 600;
+}
+
+.manager-grid-card {
+  padding: 0.9rem 0.85rem;
+}
+
+.manager-grid-table th {
+  text-align: center;
+  min-width: 132px;
+}
+
+.manager-grid-table th:first-child {
+  text-align: left;
+  min-width: 180px;
+}
+
+.manager-grid-table td {
+  vertical-align: top;
+}
+
+.manager-day-subhead {
+  margin-top: 0.08rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.manager-rep-cell {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.manager-rep-cell-wrap {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.manager-rep-bulk {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.22rem;
+  align-items: center;
+}
+
+.manager-rep-bulk-save {
+  padding: 0.22rem 0.42rem;
+  font-size: 0.72rem;
+}
+
+.manager-pto-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.manager-pto-toggle input[type="checkbox"] {
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: initial;
+  border-radius: 0;
+  background: transparent;
+  accent-color: var(--accent);
+}
+
+.manager-cell {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 120px;
+}
+
+.manager-cell-missing {
+  border-radius: 8px;
+  padding: 0.18rem;
+  background: color-mix(in srgb, var(--danger-bg) 38%, transparent);
+}
+
+.manager-cell-metrics {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.manager-cell-metrics span {
+  white-space: nowrap;
+}
+
+.manager-cell-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.manager-cell-editor {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+  padding: 0.18rem 0.28rem;
+}
+
+.manager-cell-editor summary {
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.manager-cell-editor[open] summary {
+  margin-bottom: 0.25rem;
+}
+
+.manager-activity-form {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.manager-activity-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.22rem;
+}
+
+.manager-activity-inputs label {
+  display: grid;
+  gap: 0.14rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.manager-activity-inputs input {
+  padding: 0.24rem 0.28rem;
+  font-size: 0.75rem;
+}
+
+.manager-activity-save {
+  width: 100%;
+  text-align: center;
+  padding: 0.28rem 0.38rem;
+  font-size: 0.72rem;
+}
+
+.manager-cell-actions select {
+  min-width: 0;
+  padding: 0.28rem 0.35rem;
+  font-size: 0.76rem;
+}
+
+.manager-cell-save {
+  padding: 0.26rem 0.45rem;
+  font-size: 0.74rem;
+}
+
+.manager-cell-link {
+  font-size: 0.76rem;
   font-weight: 600;
 }
 

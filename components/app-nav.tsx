@@ -7,7 +7,7 @@ type Props = {
   dailyActivityEnabled: boolean;
 };
 
-type NavHref = "/" | "/update" | "/activity" | "/activity/update";
+type NavHref = "/" | "/update" | "/activity" | "/activity/update" | "/activity/manager";
 
 type NavItem = {
   href: NavHref;
@@ -26,6 +26,7 @@ export function AppNav({ dailyActivityEnabled }: Props) {
   if (dailyActivityEnabled) {
     items.push({ href: "/activity", label: "Activity Dashboard", match: "/activity", exact: true });
     items.push({ href: "/activity/update", label: "Update Activity", match: "/activity/update", exact: true });
+    items.push({ href: "/activity/manager", label: "Manager Update", match: "/activity/manager", exact: true });
   }
 
   return (

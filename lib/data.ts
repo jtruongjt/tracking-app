@@ -1,7 +1,7 @@
 import { getCurrentMonthKey } from "@/lib/date";
 import { buildDashboardRows, buildTeamRollup } from "@/lib/scoring";
 import { getSupabaseAnonServerClient, getSupabaseServiceClient } from "@/lib/supabase/server";
-import { DailyActivity, SubTeam, Team } from "@/lib/types";
+import { DailyActivity, DailyActivityExemption, DailyActivityExemptionStatus, SubTeam, Team } from "@/lib/types";
 
 export async function getActiveReps() {
   const supabase = getSupabaseAnonServerClient();
@@ -97,6 +97,18 @@ export async function getDailyActivityForRange(startDate: string, endDate: strin
   return (data ?? []) as DailyActivity[];
 }
 
+export async function getDailyActivityExemptionsForRange(startDate: string, endDate: string) {
+  const supabase = getSupabaseAnonServerClient();
+  const { data, error } = await supabase
+    .from("daily_activity_exemption")
+    .select("rep_id,activity_date,status,note,updated_at")
+    .gte("activity_date", startDate)
+    .lte("activity_date", endDate);
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as DailyActivityExemption[];
+}
+
 export async function upsertDailyActivity(input: {
   repId: string;
   activityDate: string;
@@ -116,5 +128,34 @@ export async function upsertDailyActivity(input: {
   };
 
   const { error } = await supabase.from("daily_activity").upsert(payload, { onConflict: "rep_id,activity_date" });
+  if (error) throw new Error(error.message);
+}
+
+export async function upsertDailyActivityExemption(input: {
+  repId: string;
+  activityDate: string;
+  status: DailyActivityExemptionStatus;
+  note: string | null;
+}) {
+  const supabase = getSupabaseServiceClient();
+  const payload = {
+    rep_id: input.repId,
+    activity_date: input.activityDate,
+    status: input.status,
+    note: input.note
+  };
+
+  const { error } = await supabase.from("daily_activity_exemption").upsert(payload, { onConflict: "rep_id,activity_date" });
+  if (error) throw new Error(error.message);
+}
+
+export async function clearDailyActivityExemption(input: { repId: string; activityDate: string }) {
+  const supabase = getSupabaseServiceClient();
+  const { error } = await supabase
+    .from("daily_activity_exemption")
+    .delete()
+    .eq("rep_id", input.repId)
+    .eq("activity_date", input.activityDate);
+
   if (error) throw new Error(error.message);
 }

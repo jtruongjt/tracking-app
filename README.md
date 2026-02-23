@@ -12,6 +12,7 @@ Includes:
 - Live dashboard with pace flags (`On Track`, `At Risk`, `Behind`)
 - Daily activity tracking (`SDR events`, `events created`, `events held`) by rep and date
   - `/activity` for activity dashboard and submissions visibility
+  - `/activity/manager` for manager weekly review (missing submissions + PTO/OOO/Holiday exemptions)
   - `/activity/update` for activity submission/editing
 
 ## Stack
@@ -36,6 +37,7 @@ NEXT_PUBLIC_ENABLE_DAILY_ACTIVITY=true
 5. To pre-fill all months with same targets through January 2027, run `supabase/fill_targets_through_2027_01.sql`.
 6. Optional cleanup for older installs: run `supabase/remove_snapshot_features.sql`.
 7. For existing installs, run `supabase/add_daily_activity.sql` to enable daily activity tracking.
+8. For manager weekly PTO/OOO/Holiday statuses, run `supabase/add_daily_activity_exemptions.sql`.
 
 Note: this MVP intentionally has no auth/RLS restrictions so anyone can edit.
 

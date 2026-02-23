@@ -1,8 +1,8 @@
 import { DatePickerForm } from "@/components/date-picker-form";
 import { addDays, dateKeyToDate, getCurrentDateKey, getWeekStartKey, normalizeDateParam, toDateLabel, toWeekLabel } from "@/lib/date";
-import { getActiveReps, getDailyActivityForDate, getDailyActivityForRange } from "@/lib/data";
+import { getActiveReps, getDailyActivityExemptionsForRange, getDailyActivityForDate, getDailyActivityForRange } from "@/lib/data";
 import { isDailyActivityEnabled } from "@/lib/features";
-import { SubTeam, Team } from "@/lib/types";
+import { DailyActivityExemptionStatus, SubTeam, Team } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +55,16 @@ function isWeekdayDateKey(dateKey: string): boolean {
   return day >= 1 && day <= 5;
 }
 
+function labelForExemptionStatus(status: DailyActivityExemptionStatus): string {
+  if (status === "pto") return "PTO";
+  if (status === "ooo") return "OOO";
+  return "Holiday";
+}
+
+function badgeClassForExemptionStatus(status: DailyActivityExemptionStatus): string {
+  return status === "holiday" ? "badge-partial" : "badge-info";
+}
+
 export default async function ActivityPage({ searchParams }: Props) {
   if (!isDailyActivityEnabled()) {
     return (
@@ -85,9 +95,12 @@ export default async function ActivityPage({ searchParams }: Props) {
   const weekdaySubmissionTarget = expectedWeekdayDates.length;
   const expectedWeekdayDateSet = new Set(expectedWeekdayDates);
 
-  const [reps, activities] = await Promise.all([
+  const [reps, activities, exemptions] = await Promise.all([
     getActiveReps(),
-    view === "week" ? getDailyActivityForRange(resolvedWeekStart, weekEnd) : getDailyActivityForDate(activityDate)
+    view === "week" ? getDailyActivityForRange(resolvedWeekStart, weekEnd) : getDailyActivityForDate(activityDate),
+    view === "week"
+      ? getDailyActivityExemptionsForRange(resolvedWeekStart, weekEnd)
+      : getDailyActivityExemptionsForRange(activityDate, activityDate)
   ]);
 
   const filteredReps = reps.filter((rep) => {
@@ -99,6 +112,8 @@ export default async function ActivityPage({ searchParams }: Props) {
 
   const activityTotalsByRepId = new Map<string, { sdrEvents: number; eventsCreated: number; eventsHeld: number }>();
   const submittedDatesByRepId = new Map<string, Set<string>>();
+  const exemptionStatusByRepDate = new Map<string, DailyActivityExemptionStatus>();
+  const exemptDatesByRepId = new Map<string, Set<string>>();
   for (const activity of activities) {
     if (!filteredRepIds.has(activity.rep_id)) continue;
     const existing = activityTotalsByRepId.get(activity.rep_id) ?? { sdrEvents: 0, eventsCreated: 0, eventsHeld: 0 };
@@ -109,6 +124,14 @@ export default async function ActivityPage({ searchParams }: Props) {
     const submittedDates = submittedDatesByRepId.get(activity.rep_id) ?? new Set<string>();
     submittedDates.add(activity.activity_date);
     submittedDatesByRepId.set(activity.rep_id, submittedDates);
+  }
+  for (const exemption of exemptions) {
+    if (!filteredRepIds.has(exemption.rep_id)) continue;
+    const key = `${exemption.rep_id}:${exemption.activity_date}`;
+    exemptionStatusByRepDate.set(key, exemption.status);
+    const exemptDates = exemptDatesByRepId.get(exemption.rep_id) ?? new Set<string>();
+    exemptDates.add(exemption.activity_date);
+    exemptDatesByRepId.set(exemption.rep_id, exemptDates);
   }
 
   const expansionReps = filteredReps.filter((rep) => rep.team === "expansion");
@@ -142,7 +165,21 @@ export default async function ActivityPage({ searchParams }: Props) {
   );
 
   const periodLabel = view === "week" ? `Week (${toWeekLabel(resolvedWeekStart)})` : toDateLabel(activityDate);
-  const missingSubmissionCount = filteredReps.filter((rep) => !submittedDatesByRepId.has(rep.id)).length;
+  const missingSubmissionCount = filteredReps.filter((rep) => {
+    if (view === "day") {
+      const repDateKey = `${rep.id}:${activityDate}`;
+      const isExempt = exemptionStatusByRepDate.has(repDateKey);
+      const isSubmitted = (submittedDatesByRepId.get(rep.id) ?? new Set<string>()).has(activityDate);
+      return !isExempt && !isSubmitted;
+    }
+
+    return expectedWeekdayDates.some((dateKey) => {
+      const repDateKey = `${rep.id}:${dateKey}`;
+      const isExempt = exemptionStatusByRepDate.has(repDateKey);
+      const isSubmitted = (submittedDatesByRepId.get(rep.id) ?? new Set<string>()).has(dateKey);
+      return !isExempt && !isSubmitted;
+    });
+  }).length;
   const showExpansion = teamFilter === "all" || teamFilter === "expansion";
   const showNewLogo = teamFilter === "all" || teamFilter === "new_logo";
   const querySuffix = `&team=${teamFilter}&subTeam=${subTeamFilter}`;
@@ -270,31 +307,51 @@ export default async function ActivityPage({ searchParams }: Props) {
                   ) : (
                     expansionLeaderboard.map((rep) => {
                       const activity = activityTotalsByRepId.get(rep.id);
-                      const submittedDays =
-                        Array.from(submittedDatesByRepId.get(rep.id) ?? []).filter((dateKey) => expectedWeekdayDateSet.has(dateKey)).length;
-                      const isMissingSubmission = submittedDays === 0;
-                      const statusLabel =
-                        view === "week"
-                          ? isMissingSubmission
-                            ? weekdaySubmissionTarget === 0
-                              ? "Not started"
-                              : "Missing"
-                            : weekdaySubmissionTarget === 0
-                              ? "Not started"
-                              : `${submittedDays}/${weekdaySubmissionTarget} days`
-                          : isMissingSubmission
-                            ? "Missing"
-                            : "Submitted";
-                      const statusClass =
-                        view === "week"
-                          ? isMissingSubmission
-                            ? "badge-missing"
-                            : weekdaySubmissionTarget > 0 && submittedDays === weekdaySubmissionTarget
+                      const repSubmittedDates = submittedDatesByRepId.get(rep.id) ?? new Set<string>();
+                      const repExemptDates = exemptDatesByRepId.get(rep.id) ?? new Set<string>();
+                      const dayExemption = exemptionStatusByRepDate.get(`${rep.id}:${activityDate}`);
+
+                      let statusLabel = "Missing";
+                      let statusClass = "badge-missing";
+                      let isMissingSubmission = false;
+
+                      if (view === "day") {
+                        const isSubmitted = repSubmittedDates.has(activityDate);
+                        if (dayExemption) {
+                          statusLabel = labelForExemptionStatus(dayExemption);
+                          statusClass = badgeClassForExemptionStatus(dayExemption);
+                        } else if (isSubmitted) {
+                          statusLabel = "Submitted";
+                          statusClass = "badge-submitted";
+                        } else {
+                          statusLabel = "Missing";
+                          statusClass = "badge-missing";
+                          isMissingSubmission = true;
+                        }
+                      } else {
+                        const exemptDays = expectedWeekdayDates.filter((dateKey) => repExemptDates.has(dateKey)).length;
+                        const requiredDays = Math.max(0, weekdaySubmissionTarget - exemptDays);
+                        const submittedDays = expectedWeekdayDates.filter((dateKey) => !repExemptDates.has(dateKey) && repSubmittedDates.has(dateKey)).length;
+                        const missingRequiredDays = Math.max(0, requiredDays - submittedDays);
+
+                        if (weekdaySubmissionTarget === 0) {
+                          statusLabel = "Not started";
+                          statusClass = "badge-upcoming";
+                        } else if (requiredDays === 0 && exemptDays > 0) {
+                          statusLabel = `${exemptDays} off`;
+                          statusClass = "badge-info";
+                        } else if (requiredDays > 0) {
+                          const offSuffix = exemptDays > 0 ? ` + ${exemptDays} off` : "";
+                          statusLabel = `${submittedDays}/${requiredDays} days${offSuffix}`;
+                          isMissingSubmission = missingRequiredDays > 0;
+                          statusClass =
+                            missingRequiredDays === 0
                               ? "badge-submitted"
-                              : "badge-partial"
-                          : isMissingSubmission
-                            ? "badge-missing"
-                            : "badge-submitted";
+                              : submittedDays > 0 || exemptDays > 0
+                                ? "badge-partial"
+                                : "badge-missing";
+                        }
+                      }
                       return (
                         <tr key={rep.id} className={isMissingSubmission ? "row-missing-submission" : undefined}>
                           <td>{rep.name}</td>
@@ -334,31 +391,51 @@ export default async function ActivityPage({ searchParams }: Props) {
                   ) : (
                     newLogoLeaderboard.map((rep) => {
                       const activity = activityTotalsByRepId.get(rep.id);
-                      const submittedDays =
-                        Array.from(submittedDatesByRepId.get(rep.id) ?? []).filter((dateKey) => expectedWeekdayDateSet.has(dateKey)).length;
-                      const isMissingSubmission = submittedDays === 0;
-                      const statusLabel =
-                        view === "week"
-                          ? isMissingSubmission
-                            ? weekdaySubmissionTarget === 0
-                              ? "Not started"
-                              : "Missing"
-                            : weekdaySubmissionTarget === 0
-                              ? "Not started"
-                              : `${submittedDays}/${weekdaySubmissionTarget} days`
-                          : isMissingSubmission
-                            ? "Missing"
-                            : "Submitted";
-                      const statusClass =
-                        view === "week"
-                          ? isMissingSubmission
-                            ? "badge-missing"
-                            : weekdaySubmissionTarget > 0 && submittedDays === weekdaySubmissionTarget
+                      const repSubmittedDates = submittedDatesByRepId.get(rep.id) ?? new Set<string>();
+                      const repExemptDates = exemptDatesByRepId.get(rep.id) ?? new Set<string>();
+                      const dayExemption = exemptionStatusByRepDate.get(`${rep.id}:${activityDate}`);
+
+                      let statusLabel = "Missing";
+                      let statusClass = "badge-missing";
+                      let isMissingSubmission = false;
+
+                      if (view === "day") {
+                        const isSubmitted = repSubmittedDates.has(activityDate);
+                        if (dayExemption) {
+                          statusLabel = labelForExemptionStatus(dayExemption);
+                          statusClass = badgeClassForExemptionStatus(dayExemption);
+                        } else if (isSubmitted) {
+                          statusLabel = "Submitted";
+                          statusClass = "badge-submitted";
+                        } else {
+                          statusLabel = "Missing";
+                          statusClass = "badge-missing";
+                          isMissingSubmission = true;
+                        }
+                      } else {
+                        const exemptDays = expectedWeekdayDates.filter((dateKey) => repExemptDates.has(dateKey)).length;
+                        const requiredDays = Math.max(0, weekdaySubmissionTarget - exemptDays);
+                        const submittedDays = expectedWeekdayDates.filter((dateKey) => !repExemptDates.has(dateKey) && repSubmittedDates.has(dateKey)).length;
+                        const missingRequiredDays = Math.max(0, requiredDays - submittedDays);
+
+                        if (weekdaySubmissionTarget === 0) {
+                          statusLabel = "Not started";
+                          statusClass = "badge-upcoming";
+                        } else if (requiredDays === 0 && exemptDays > 0) {
+                          statusLabel = `${exemptDays} off`;
+                          statusClass = "badge-info";
+                        } else if (requiredDays > 0) {
+                          const offSuffix = exemptDays > 0 ? ` + ${exemptDays} off` : "";
+                          statusLabel = `${submittedDays}/${requiredDays} days${offSuffix}`;
+                          isMissingSubmission = missingRequiredDays > 0;
+                          statusClass =
+                            missingRequiredDays === 0
                               ? "badge-submitted"
-                              : "badge-partial"
-                          : isMissingSubmission
-                            ? "badge-missing"
-                            : "badge-submitted";
+                              : submittedDays > 0 || exemptDays > 0
+                                ? "badge-partial"
+                                : "badge-missing";
+                        }
+                      }
                       return (
                         <tr key={rep.id} className={isMissingSubmission ? "row-missing-submission" : undefined}>
                           <td>{rep.name}</td>

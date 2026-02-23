@@ -41,6 +41,16 @@ export interface DailyActivity {
   updated_at: string;
 }
 
+export type DailyActivityExemptionStatus = "pto" | "ooo" | "holiday";
+
+export interface DailyActivityExemption {
+  rep_id: string;
+  activity_date: string;
+  status: DailyActivityExemptionStatus;
+  note: string | null;
+  updated_at: string;
+}
+
 export type PaceStatus = "on_track" | "at_risk" | "behind";
 
 export interface DashboardRow {
