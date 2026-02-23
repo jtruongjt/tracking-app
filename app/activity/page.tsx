@@ -50,6 +50,11 @@ function normalizeSubTeamParam(value?: string | string[]): SubTeam | "all" {
   return allSubTeams.includes(raw as SubTeam) ? (raw as SubTeam) : "all";
 }
 
+function isWeekdayDateKey(dateKey: string): boolean {
+  const day = dateKeyToDate(dateKey).getDay();
+  return day >= 1 && day <= 5;
+}
+
 export default async function ActivityPage({ searchParams }: Props) {
   if (!isDailyActivityEnabled()) {
     return (
@@ -68,10 +73,17 @@ export default async function ActivityPage({ searchParams }: Props) {
   const selectedDate = normalizeDateParam(resolvedSearchParams?.date);
   const selectedWeekStart = normalizeDateParam(resolvedSearchParams?.weekStart);
   const activityDate = selectedDate ?? getCurrentDateKey();
+  const todayDateKey = getCurrentDateKey();
   const resolvedWeekStart = getWeekStartKey(dateKeyToDate(selectedWeekStart ?? activityDate));
   const weekEnd = addDays(resolvedWeekStart, 6);
   const previousWeekStart = addDays(resolvedWeekStart, -7);
   const nextWeekStart = addDays(resolvedWeekStart, 7);
+  const weekDates = Array.from({ length: 7 }, (_, index) => addDays(resolvedWeekStart, index));
+  const weekDayDates = weekDates.filter(isWeekdayDateKey);
+  const isCurrentWeek = getWeekStartKey(dateKeyToDate(todayDateKey)) === resolvedWeekStart;
+  const expectedWeekdayDates = isCurrentWeek ? weekDayDates.filter((dateKey) => dateKey <= todayDateKey) : weekDayDates;
+  const weekdaySubmissionTarget = expectedWeekdayDates.length;
+  const expectedWeekdayDateSet = new Set(expectedWeekdayDates);
 
   const [reps, activities] = await Promise.all([
     getActiveReps(),
@@ -86,6 +98,7 @@ export default async function ActivityPage({ searchParams }: Props) {
   const filteredRepIds = new Set(filteredReps.map((rep) => rep.id));
 
   const activityTotalsByRepId = new Map<string, { sdrEvents: number; eventsCreated: number; eventsHeld: number }>();
+  const submittedDatesByRepId = new Map<string, Set<string>>();
   for (const activity of activities) {
     if (!filteredRepIds.has(activity.rep_id)) continue;
     const existing = activityTotalsByRepId.get(activity.rep_id) ?? { sdrEvents: 0, eventsCreated: 0, eventsHeld: 0 };
@@ -93,6 +106,9 @@ export default async function ActivityPage({ searchParams }: Props) {
     existing.eventsCreated += activity.events_created;
     existing.eventsHeld += activity.events_held;
     activityTotalsByRepId.set(activity.rep_id, existing);
+    const submittedDates = submittedDatesByRepId.get(activity.rep_id) ?? new Set<string>();
+    submittedDates.add(activity.activity_date);
+    submittedDatesByRepId.set(activity.rep_id, submittedDates);
   }
 
   const expansionReps = filteredReps.filter((rep) => rep.team === "expansion");
@@ -126,6 +142,7 @@ export default async function ActivityPage({ searchParams }: Props) {
   );
 
   const periodLabel = view === "week" ? `Week (${toWeekLabel(resolvedWeekStart)})` : toDateLabel(activityDate);
+  const missingSubmissionCount = filteredReps.filter((rep) => !submittedDatesByRepId.has(rep.id)).length;
   const showExpansion = teamFilter === "all" || teamFilter === "expansion";
   const showNewLogo = teamFilter === "all" || teamFilter === "new_logo";
   const querySuffix = `&team=${teamFilter}&subTeam=${subTeamFilter}`;
@@ -223,33 +240,65 @@ export default async function ActivityPage({ searchParams }: Props) {
           <p className="kpi-value">{totals.eventsHeld.toLocaleString()}</p>
           <p className="kpi-note">Across filtered reps</p>
         </article>
+        <article className="kpi-card">
+          <h3>Missing Submissions</h3>
+          <p className="kpi-value kpi-status-behind">{missingSubmissionCount}</p>
+          <p className="kpi-note">No entry for selected {view === "week" ? "week" : "day"}</p>
+        </article>
       </section>
 
-      <div className="grid grid-2">
+      <div className="grid activity-table-grid">
         {showExpansion ? (
-          <section className="card">
+          <section className="card activity-table-card">
             <h3>Expansion Activity for {periodLabel}</h3>
             <div className="table-wrap">
-              <table className="table table-striped">
+              <table className="table table-striped table-compact activity-table">
                 <thead>
                   <tr>
                     <th>Rep</th>
-                    <th className="num">SDR Events</th>
-                    <th className="num">Events Created</th>
-                    <th className="num">Events Held</th>
+                    <th>Status</th>
+                    <th className="num">SDR</th>
+                    <th className="num">Created</th>
+                    <th className="num">Held</th>
                   </tr>
                 </thead>
                 <tbody>
                   {expansionLeaderboard.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="muted">No reps assigned.</td>
+                      <td colSpan={5} className="muted">No reps assigned.</td>
                     </tr>
                   ) : (
                     expansionLeaderboard.map((rep) => {
                       const activity = activityTotalsByRepId.get(rep.id);
+                      const submittedDays =
+                        Array.from(submittedDatesByRepId.get(rep.id) ?? []).filter((dateKey) => expectedWeekdayDateSet.has(dateKey)).length;
+                      const isMissingSubmission = submittedDays === 0;
+                      const statusLabel =
+                        view === "week"
+                          ? isMissingSubmission
+                            ? weekdaySubmissionTarget === 0
+                              ? "Not started"
+                              : "Missing"
+                            : weekdaySubmissionTarget === 0
+                              ? "Not started"
+                              : `${submittedDays}/${weekdaySubmissionTarget} days`
+                          : isMissingSubmission
+                            ? "Missing"
+                            : "Submitted";
+                      const statusClass =
+                        view === "week"
+                          ? isMissingSubmission
+                            ? "badge-missing"
+                            : weekdaySubmissionTarget > 0 && submittedDays === weekdaySubmissionTarget
+                              ? "badge-submitted"
+                              : "badge-partial"
+                          : isMissingSubmission
+                            ? "badge-missing"
+                            : "badge-submitted";
                       return (
-                        <tr key={rep.id}>
+                        <tr key={rep.id} className={isMissingSubmission ? "row-missing-submission" : undefined}>
                           <td>{rep.name}</td>
+                          <td><span className={`badge ${statusClass}`}>{statusLabel}</span></td>
                           <td className="num">{activity?.sdrEvents ?? 0}</td>
                           <td className="num">{activity?.eventsCreated ?? 0}</td>
                           <td className="num">{activity?.eventsHeld ?? 0}</td>
@@ -264,29 +313,56 @@ export default async function ActivityPage({ searchParams }: Props) {
         ) : null}
 
         {showNewLogo ? (
-          <section className="card">
+          <section className="card activity-table-card">
             <h3>New Logo Activity for {periodLabel}</h3>
             <div className="table-wrap">
-              <table className="table table-striped">
+              <table className="table table-striped table-compact activity-table">
                 <thead>
                   <tr>
                     <th>Rep</th>
-                    <th className="num">SDR Events</th>
-                    <th className="num">Events Created</th>
-                    <th className="num">Events Held</th>
+                    <th>Status</th>
+                    <th className="num">SDR</th>
+                    <th className="num">Created</th>
+                    <th className="num">Held</th>
                   </tr>
                 </thead>
                 <tbody>
                   {newLogoLeaderboard.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="muted">No reps assigned.</td>
+                      <td colSpan={5} className="muted">No reps assigned.</td>
                     </tr>
                   ) : (
                     newLogoLeaderboard.map((rep) => {
                       const activity = activityTotalsByRepId.get(rep.id);
+                      const submittedDays =
+                        Array.from(submittedDatesByRepId.get(rep.id) ?? []).filter((dateKey) => expectedWeekdayDateSet.has(dateKey)).length;
+                      const isMissingSubmission = submittedDays === 0;
+                      const statusLabel =
+                        view === "week"
+                          ? isMissingSubmission
+                            ? weekdaySubmissionTarget === 0
+                              ? "Not started"
+                              : "Missing"
+                            : weekdaySubmissionTarget === 0
+                              ? "Not started"
+                              : `${submittedDays}/${weekdaySubmissionTarget} days`
+                          : isMissingSubmission
+                            ? "Missing"
+                            : "Submitted";
+                      const statusClass =
+                        view === "week"
+                          ? isMissingSubmission
+                            ? "badge-missing"
+                            : weekdaySubmissionTarget > 0 && submittedDays === weekdaySubmissionTarget
+                              ? "badge-submitted"
+                              : "badge-partial"
+                          : isMissingSubmission
+                            ? "badge-missing"
+                            : "badge-submitted";
                       return (
-                        <tr key={rep.id}>
+                        <tr key={rep.id} className={isMissingSubmission ? "row-missing-submission" : undefined}>
                           <td>{rep.name}</td>
+                          <td><span className={`badge ${statusClass}`}>{statusLabel}</span></td>
                           <td className="num">{activity?.sdrEvents ?? 0}</td>
                           <td className="num">{activity?.eventsCreated ?? 0}</td>
                           <td className="num">{activity?.eventsHeld ?? 0}</td>

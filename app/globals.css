@@ -185,6 +185,10 @@ select:focus-visible {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+.activity-table-grid {
+  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+}
+
 .kpi-grid {
   display: grid;
   gap: 0.8rem;
@@ -196,6 +200,10 @@ select:focus-visible {
   border-radius: 12px;
   padding: 0.75rem 0.8rem;
   background: var(--surface-subtle);
+}
+
+.activity-table-card {
+  padding: 0.95rem 0.9rem;
 }
 
 .kpi-card h3 {
@@ -276,6 +284,26 @@ select:focus-visible {
   white-space: nowrap;
 }
 
+.table-compact th,
+.table-compact td {
+  padding: 0.46rem 0.4rem;
+  font-size: 0.84rem;
+}
+
+.table-compact th {
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.activity-table td:nth-child(2) {
+  white-space: nowrap;
+}
+
+.activity-table .badge {
+  font-size: 0.72rem;
+  padding: 0.12rem 0.38rem;
+}
+
 .badge {
   display: inline-block;
   font-size: 0.8rem;
@@ -300,6 +328,38 @@ select:focus-visible {
   color: var(--danger-ink);
   background: var(--danger-bg);
   border-color: var(--danger-border);
+}
+
+.badge-submitted {
+  color: var(--success-ink);
+  background: var(--success-bg);
+  border-color: var(--success-border);
+}
+
+.badge-partial {
+  color: var(--warning-ink);
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+}
+
+.badge-missing {
+  color: var(--danger-ink);
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  font-weight: 700;
+}
+
+.table tbody tr.row-missing-submission {
+  background: color-mix(in srgb, var(--danger-bg) 75%, var(--surface));
+}
+
+.table tbody tr.row-missing-submission:hover {
+  background: color-mix(in srgb, var(--danger-bg) 82%, var(--surface));
+}
+
+.table tbody tr.row-missing-submission td:first-child {
+  color: var(--danger-ink);
+  font-weight: 600;
 }
 
 form {
