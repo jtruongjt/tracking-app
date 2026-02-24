@@ -1,4 +1,5 @@
 import { DatePickerForm } from "@/components/date-picker-form";
+import { ActivityFilterForm } from "@/components/activity-filter-form";
 import { addDays, dateKeyToDate, getCurrentDateKey, getWeekStartKey, normalizeDateParam, toDateLabel, toWeekLabel } from "@/lib/date";
 import { getActiveReps, getDailyActivityExemptionsForRange, getDailyActivityForDate, getDailyActivityForRange } from "@/lib/data";
 import { isDailyActivityEnabled } from "@/lib/features";
@@ -203,30 +204,14 @@ export default async function ActivityPage({ searchParams }: Props) {
             Week View
           </a>
         </div>
-        <form method="GET" className="toolbar-form">
-          <input type="hidden" name="view" value={view} />
-          {view === "week" ? <input type="hidden" name="weekStart" value={resolvedWeekStart} /> : <input type="hidden" name="date" value={activityDate} />}
-          <label>
-            Team Filter
-            <select name="team" defaultValue={teamFilter}>
-              <option value="all">All Teams</option>
-              <option value="expansion">Expansion</option>
-              <option value="new_logo">New Logo</option>
-            </select>
-          </label>
-          <label>
-            Sub Team Drilldown
-            <select name="subTeam" defaultValue={subTeamFilter}>
-              <option value="all">All Sub Teams</option>
-              {subTeamOptions.map((subTeam) => (
-                <option key={subTeam} value={subTeam}>
-                  {labelForSubTeam(subTeam)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="submit">Apply Team Filters</button>
-        </form>
+        <ActivityFilterForm
+          view={view}
+          activityDate={activityDate}
+          weekStart={resolvedWeekStart}
+          team={teamFilter}
+          subTeam={subTeamFilter}
+          subTeamOptions={subTeamOptions}
+        />
         {view === "week" ? (
           <div className="grid">
             <DatePickerForm

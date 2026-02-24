@@ -66,7 +66,6 @@ function cellKey(repId: string, dateKey: string): string {
 
 export function ManagerWeekGrid({ reps, weekDates, activities, exemptions, todayDateKey }: Props) {
   const router = useRouter();
-  const [drafts, setDrafts] = useState<Record<string, CellExemptionValue>>({});
   const [bulkRepPtoDrafts, setBulkRepPtoDrafts] = useState<Record<string, boolean>>({});
   const [pendingExemptionCell, setPendingExemptionCell] = useState<string | null>(null);
   const [pendingActivityCell, setPendingActivityCell] = useState<string | null>(null);
@@ -102,15 +101,8 @@ export function ManagerWeekGrid({ reps, weekDates, activities, exemptions, today
       .filter((group) => group.reps.length > 0);
   }, [reps]);
 
-  function getDraftValue(repId: string, dateKey: string): CellExemptionValue {
+  async function saveExemption(repId: string, dateKey: string, status: CellExemptionValue) {
     const key = cellKey(repId, dateKey);
-    if (drafts[key]) return drafts[key];
-    return exemptionByCell.get(key) ?? "none";
-  }
-
-  async function saveExemption(repId: string, dateKey: string) {
-    const key = cellKey(repId, dateKey);
-    const status = getDraftValue(repId, dateKey);
     setPendingExemptionCell(key);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -126,7 +118,7 @@ export function ManagerWeekGrid({ reps, weekDates, activities, exemptions, today
         setErrorMessage(body.error ?? "Failed to save exemption.");
         return;
       }
-      setSuccessMessage("Status updated.");
+      setSuccessMessage(status === "none" ? "PTO cleared." : "PTO updated.");
       router.refresh();
     } catch {
       setErrorMessage("Unexpected error. Try again.");
@@ -272,7 +264,6 @@ export function ManagerWeekGrid({ reps, weekDates, activities, exemptions, today
                       const key = cellKey(rep.id, dateKey);
                       const activity = activityByCell.get(key);
                       const savedExemption = exemptionByCell.get(key);
-                      const draftValue = getDraftValue(rep.id, dateKey);
                       const isFuture = dateKey > todayDateKey;
                       const isExemptionPending = pendingExemptionCell === key;
                       const isActivityPending = pendingActivityCell === key;
@@ -355,20 +346,12 @@ export function ManagerWeekGrid({ reps, weekDates, activities, exemptions, today
                                 <label className="manager-pto-toggle">
                                   <input
                                     type="checkbox"
-                                    checked={draftValue === "pto"}
-                                    onChange={(e) =>
-                                      setDrafts((prev) => ({
-                                        ...prev,
-                                        [key]: e.target.checked ? "pto" : "none"
-                                      }))
-                                    }
+                                    checked={savedExemption === "pto"}
+                                    onChange={(e) => saveExemption(rep.id, dateKey, e.target.checked ? "pto" : "none")}
                                     disabled={isExemptionPending}
                                   />
                                   <span>PTO</span>
                                 </label>
-                                <button type="button" className="nav-toggle-link manager-cell-save" onClick={() => saveExemption(rep.id, dateKey)} disabled={isExemptionPending}>
-                                  {isExemptionPending ? "..." : "Save"}
-                                </button>
                               </div>
                             </>
                           </div>
