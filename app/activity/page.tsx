@@ -1,3 +1,5 @@
+import type { Route } from "next";
+import Link from "next/link";
 import { DatePickerForm } from "@/components/date-picker-form";
 import { ActivityFilterForm } from "@/components/activity-filter-form";
 import { addDays, dateKeyToDate, getCurrentDateKey, getWeekStartKey, normalizeDateParam, toDateLabel, toWeekLabel } from "@/lib/date";
@@ -337,10 +339,21 @@ export default async function ActivityPage({ searchParams }: Props) {
                                 : "badge-missing";
                         }
                       }
+                      const missingUpdateHref = view === "day" && isMissingSubmission
+                        ? (`/activity/update?date=${activityDate}&repId=${rep.id}` as Route)
+                        : null;
                       return (
                         <tr key={rep.id} className={isMissingSubmission ? "row-missing-submission" : undefined}>
                           <td>{rep.name}</td>
-                          <td><span className={`badge ${statusClass}`}>{statusLabel}</span></td>
+                          <td>
+                            {missingUpdateHref ? (
+                              <Link href={missingUpdateHref}>
+                                <span className={`badge ${statusClass}`}>{statusLabel}</span>
+                              </Link>
+                            ) : (
+                              <span className={`badge ${statusClass}`}>{statusLabel}</span>
+                            )}
+                          </td>
                           <td className="num">{activity?.sdrEvents ?? 0}</td>
                           <td className="num">{activity?.eventsCreated ?? 0}</td>
                           <td className="num">{activity?.eventsHeld ?? 0}</td>
@@ -421,10 +434,21 @@ export default async function ActivityPage({ searchParams }: Props) {
                                 : "badge-missing";
                         }
                       }
+                      const missingUpdateHref = view === "day" && isMissingSubmission
+                        ? (`/activity/update?date=${activityDate}&repId=${rep.id}` as Route)
+                        : null;
                       return (
                         <tr key={rep.id} className={isMissingSubmission ? "row-missing-submission" : undefined}>
                           <td>{rep.name}</td>
-                          <td><span className={`badge ${statusClass}`}>{statusLabel}</span></td>
+                          <td>
+                            {missingUpdateHref ? (
+                              <Link href={missingUpdateHref}>
+                                <span className={`badge ${statusClass}`}>{statusLabel}</span>
+                              </Link>
+                            ) : (
+                              <span className={`badge ${statusClass}`}>{statusLabel}</span>
+                            )}
+                          </td>
                           <td className="num">{activity?.sdrEvents ?? 0}</td>
                           <td className="num">{activity?.eventsCreated ?? 0}</td>
                           <td className="num">{activity?.eventsHeld ?? 0}</td>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ActivityForm } from "@/components/activity-form";
 import { DatePickerForm } from "@/components/date-picker-form";
-import { getCurrentDateKey, normalizeDateParam, toDateLabel } from "@/lib/date";
+import { getCurrentDateKey, isWeekendDateKey, normalizeDateParam, toDateLabel } from "@/lib/date";
 import { getActiveReps, getDailyActivityForDate } from "@/lib/data";
 import { isDailyActivityEnabled } from "@/lib/features";
 
@@ -38,6 +38,7 @@ export default async function ActivityUpdatePage({ searchParams }: Props) {
   const resolvedSearchParams = searchParams ? await Promise.resolve(searchParams) : undefined;
   const selectedDate = normalizeDateParam(resolvedSearchParams?.date);
   const activityDate = selectedDate ?? getCurrentDateKey();
+  const isWeekendDate = isWeekendDateKey(activityDate);
   const requestedRepId = normalizeRepIdParam(resolvedSearchParams?.repId);
 
   const [reps, activities] = await Promise.all([getActiveReps(), getDailyActivityForDate(activityDate)]);
@@ -47,6 +48,7 @@ export default async function ActivityUpdatePage({ searchParams }: Props) {
     <section className="card toolbar-card">
       <h2>Daily Activity Submission</h2>
       <p className="muted">Submit or edit rep activity for {toDateLabel(activityDate)}.</p>
+      {isWeekendDate ? <p className="notice notice-error">Weekend submissions are disabled. Please choose a weekday.</p> : null}
       <p>
         <Link href={`/activity?date=${activityDate}`}>Back to Activity Dashboard</Link>
       </p>

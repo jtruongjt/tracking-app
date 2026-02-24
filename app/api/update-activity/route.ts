@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAnonServerClient } from "@/lib/supabase/server";
 import { upsertDailyActivity } from "@/lib/data";
 import { isDailyActivityEnabled } from "@/lib/features";
+import { isWeekendDateKey } from "@/lib/date";
 
 function isIsoDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -31,6 +32,9 @@ export async function POST(request: Request) {
     }
     if (!isIsoDate(activityDate)) {
       return NextResponse.json({ error: "Date must be in YYYY-MM-DD format." }, { status: 400 });
+    }
+    if (isWeekendDateKey(activityDate)) {
+      return NextResponse.json({ error: "Weekend submissions are not allowed." }, { status: 400 });
     }
     if (!isNonNegativeInteger(sdrEvents) || !isNonNegativeInteger(eventsCreated) || !isNonNegativeInteger(eventsHeld)) {
       return NextResponse.json({ error: "Activity values must be non-negative integers." }, { status: 400 });

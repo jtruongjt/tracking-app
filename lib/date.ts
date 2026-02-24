@@ -20,6 +20,11 @@ export function dateKeyToDate(dateKey: string): Date {
   return parseDateKey(dateKey);
 }
 
+export function isWeekendDateKey(dateKey: string): boolean {
+  const day = parseDateKey(dateKey).getDay();
+  return day === 0 || day === 6;
+}
+
 export function getWeekStartDate(date = new Date()): Date {
   const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const day = copy.getDay();

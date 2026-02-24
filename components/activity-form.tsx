@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DailyActivity, SubTeam, Team } from "@/lib/types";
+import { isWeekendDateKey } from "@/lib/date";
 
 type RepOption = {
   id: string;
@@ -49,6 +50,7 @@ export function ActivityForm({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const isWeekendDate = isWeekendDateKey(activityDate);
 
   const activityByRep = useMemo(() => new Map(activities.map((item) => [item.rep_id, item])), [activities]);
 
@@ -103,6 +105,11 @@ export function ActivityForm({
 
     setErrorMessage(null);
     setSuccessMessage(null);
+
+    if (isWeekendDate) {
+      setErrorMessage("Weekend submissions are not allowed. Please select a weekday.");
+      return;
+    }
 
     const sdrValue = Number(sdrEvents);
     const createdValue = Number(eventsCreated);
@@ -210,7 +217,8 @@ export function ActivityForm({
         />
       </label>
 
-      <button type="submit" disabled={loading || !selectedRep}>{loading ? "Saving..." : "Submit"}</button>
+      {isWeekendDate ? <p className="notice notice-error">Weekend submissions are disabled. Select a weekday to submit activity.</p> : null}
+      <button type="submit" disabled={loading || !selectedRep || isWeekendDate}>{loading ? "Saving..." : "Submit"}</button>
       {successMessage ? <p className="notice notice-success">{successMessage}</p> : null}
       {errorMessage ? <p className="notice notice-error">{errorMessage}</p> : null}
     </form>
