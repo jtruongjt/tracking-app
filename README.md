@@ -27,6 +27,8 @@ NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 NEXT_PUBLIC_ENABLE_DAILY_ACTIVITY=true
+BASIC_AUTH_USERNAME=...
+BASIC_AUTH_PASSWORD=...
 ```
 
 ## Database Setup
@@ -48,6 +50,11 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+## Optional Basic Auth Gate (recommended for internal use)
+- Set `BASIC_AUTH_USERNAME` and `BASIC_AUTH_PASSWORD` to enable a shared-password gate.
+- The gate is enforced in `middleware.ts` and protects app pages plus `/api/*` routes.
+- If both vars are blank, the gate is disabled.
 
 ## Behavior Rules
 - Totals are overwrite-only per rep per month.
