@@ -45,7 +45,8 @@ export async function getDashboardData(month = getCurrentMonthKey()) {
   const rows = buildDashboardRows({
     reps: (repsResult.data ?? []) as Array<{ id: string; name: string; team: Team; sub_team: SubTeam }>,
     targets: (targetsResult.data ?? []) as Array<{ rep_id: string; tqr_target: number; nl_target: number | null }>,
-    totals: (totalsResult.data ?? []) as Array<{ rep_id: string; tqr_actual: number; nl_actual: number | null }>
+    totals: (totalsResult.data ?? []) as Array<{ rep_id: string; tqr_actual: number; nl_actual: number | null }>,
+    month
   });
 
   return {

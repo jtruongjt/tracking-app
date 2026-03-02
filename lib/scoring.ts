@@ -1,4 +1,4 @@
-import { getMonthElapsedRatio } from "@/lib/date";
+import { getMonthElapsedRatioForMonth } from "@/lib/date";
 import { DashboardRow, PaceStatus, SubTeam, Team } from "@/lib/types";
 
 function safeAttainment(actual: number, target: number): number {
@@ -60,11 +60,12 @@ export function buildDashboardRows(input: {
   reps: Array<{ id: string; name: string; team: Team; sub_team: SubTeam }>;
   targets: Array<{ rep_id: string; tqr_target: number; nl_target: number | null }>;
   totals: Array<{ rep_id: string; tqr_actual: number; nl_actual: number | null }>;
+  month: string;
   now?: Date;
 }): DashboardRow[] {
   const targetMap = new Map(input.targets.map((t) => [t.rep_id, t]));
   const totalsMap = new Map(input.totals.map((t) => [t.rep_id, t]));
-  const elapsedRatio = getMonthElapsedRatio(input.now ?? new Date());
+  const elapsedRatio = getMonthElapsedRatioForMonth(input.month, input.now ?? new Date());
 
   const rows = input.reps.map((rep) => {
     const target = targetMap.get(rep.id);

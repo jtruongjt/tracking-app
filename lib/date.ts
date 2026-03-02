@@ -82,6 +82,24 @@ export function getMonthElapsedRatio(date = new Date()): number {
   return day / daysInMonth;
 }
 
+export function getMonthElapsedRatioForMonth(monthKey: string, now = new Date()): number {
+  const [yearStr, monthStr] = monthKey.split("-");
+  const year = Number(yearStr);
+  const monthIndex = Number(monthStr) - 1;
+
+  if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || monthIndex < 0 || monthIndex > 11) {
+    return getMonthElapsedRatio(now);
+  }
+
+  const currentMonthIndex = now.getFullYear() * 12 + now.getMonth();
+  const targetMonthIndex = year * 12 + monthIndex;
+
+  if (targetMonthIndex < currentMonthIndex) return 1;
+  if (targetMonthIndex > currentMonthIndex) return 0;
+
+  return getMonthElapsedRatio(now);
+}
+
 export function toMonthLabel(monthKey: string): string {
   const [yearStr, monthStr] = monthKey.split("-");
   const date = new Date(Number(yearStr), Number(monthStr) - 1, 1);
