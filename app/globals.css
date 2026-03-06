@@ -295,6 +295,15 @@ select:focus-visible {
   letter-spacing: 0.02em;
 }
 
+.table-link-inherit {
+  color: inherit;
+  text-decoration: none;
+}
+
+.table-link-inherit:visited {
+  color: inherit;
+}
+
 .activity-table td:nth-child(2) {
   white-space: nowrap;
 }

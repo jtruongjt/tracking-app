@@ -39,10 +39,20 @@ function formatLastUpdated(value?: string): string {
   return new Date(value).toLocaleString();
 }
 
-export function UpdateForm({ month, reps, totals }: { month: string; reps: RepOption[]; totals: TotalEntry[] }) {
+export function UpdateForm({
+  month,
+  reps,
+  totals,
+  initialRepId
+}: {
+  month: string;
+  reps: RepOption[];
+  totals: TotalEntry[];
+  initialRepId?: string;
+}) {
   const router = useRouter();
   const [subTeamFilter, setSubTeamFilter] = useState<SubTeam | "all">("all");
-  const [repId, setRepId] = useState("");
+  const [repId, setRepId] = useState(initialRepId ?? "");
   const [tqr, setTqr] = useState("0");
   const [nl, setNl] = useState("0");
   const [loading, setLoading] = useState(false);
@@ -62,6 +72,12 @@ export function UpdateForm({ month, reps, totals }: { month: string; reps: RepOp
   const selectedTotal = selectedRep ? totalsByRep.get(selectedRep.id) : undefined;
 
   const subTeamOptions = ["all", "team_lucy", "team_ryan", "team_mike", "team_bridger", "team_justin", "team_kyra", "team_sydney"] as const;
+
+  useEffect(() => {
+    if (!initialRepId) return;
+    const exists = reps.some((rep) => rep.id === initialRepId);
+    if (exists) setRepId(initialRepId);
+  }, [initialRepId, reps]);
 
   useEffect(() => {
     if (!filteredReps.length || repId === "") {

@@ -1,3 +1,5 @@
+import type { Route } from "next";
+import Link from "next/link";
 import { getCurrentMonthKey, normalizeMonthParam, toMonthLabel } from "@/lib/date";
 import { getDashboardData } from "@/lib/data";
 import { formatCurrency, formatPercent, formatScorePercent } from "@/lib/scoring";
@@ -157,7 +159,9 @@ export default async function DashboardPage({ searchParams }: Props) {
                       ) : (
                         rows.map((row) => (
                           <tr key={row.repId}>
-                            <td>{row.repName}</td>
+                            <td>
+                              <Link className="table-link-inherit" href={`/update?month=${month}&repId=${row.repId}` as Route}>{row.repName}</Link>
+                            </td>
                             <td className="num">{formatCurrency(row.tqrActual)} / {formatCurrency(row.tqrTarget)}</td>
                             <td className="num">{formatPercent(row.tqrAttainment)}</td>
                             <td><PaceBadge status={row.paceStatus} /></td>
@@ -204,7 +208,9 @@ export default async function DashboardPage({ searchParams }: Props) {
                       ) : (
                         rows.map((row) => (
                           <tr key={row.repId}>
-                            <td>{row.repName}</td>
+                            <td>
+                              <Link className="table-link-inherit" href={`/update?month=${month}&repId=${row.repId}` as Route}>{row.repName}</Link>
+                            </td>
                             <td className="num">{formatCurrency(row.tqrActual)} / {formatCurrency(row.tqrTarget)}</td>
                             <td className="num">{formatPercent(row.tqrAttainment)}</td>
                             <td className="num">{row.nlActual === null || row.nlTarget === null ? "N/A" : `${row.nlActual.toLocaleString()} / ${row.nlTarget.toLocaleString()}`}</td>
