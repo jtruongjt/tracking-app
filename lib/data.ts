@@ -104,6 +104,7 @@ export async function getDashboardData(month = getCurrentMonthKey()) {
 
 export async function getRepPerformanceHistory(rep: Pick<Rep, "id" | "team">) {
   const supabase = getSupabaseAnonServerClient();
+  const currentMonth = getCurrentMonthKey();
   const [targetsResult, totalsResult] = await Promise.all([
     supabase
       .from("monthly_target")
@@ -125,6 +126,7 @@ export async function getRepPerformanceHistory(rep: Pick<Rep, "id" | "team">) {
   const months = new Set<string>([...targetMap.keys(), ...totalsMap.keys()]);
 
   return Array.from(months)
+    .filter((month) => month <= currentMonth)
     .sort((a, b) => b.localeCompare(a))
     .map((month): RepPerformanceHistoryRow => {
       const target = targetMap.get(month);

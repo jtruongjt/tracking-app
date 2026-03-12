@@ -34,17 +34,6 @@ function labelForExemptionStatus(status: DailyActivityExemptionStatus): string {
   return "Holiday";
 }
 
-function formatUpdatedAt(value: string): string {
-  if (!value) return "No submission";
-  return new Date(value).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit"
-  });
-}
-
 function getRecentWindow(): { startDate: string; endDate: string } {
   const end = new Date();
   const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 29);
@@ -229,13 +218,12 @@ export default async function RepProfilePage({ params, searchParams }: Props) {
                     <th className="num">SDR</th>
                     <th className="num">Created</th>
                     <th className="num">Held</th>
-                    <th>Notes</th>
                   </tr>
                 </thead>
                 <tbody>
                   {activityHistory.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="muted">No recent activity found yet.</td>
+                      <td colSpan={5} className="muted">No recent activity found yet.</td>
                     </tr>
                   ) : (
                     activityHistory.map((row) => (
@@ -253,7 +241,6 @@ export default async function RepProfilePage({ params, searchParams }: Props) {
                         <td className="num">{row.sdr_events}</td>
                         <td className="num">{row.events_created}</td>
                         <td className="num">{row.events_held}</td>
-                        <td className="muted">{row.notes ?? row.exemption_note ?? formatUpdatedAt(row.updated_at)}</td>
                       </tr>
                     ))
                   )}
