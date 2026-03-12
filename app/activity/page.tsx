@@ -344,7 +344,12 @@ export default async function ActivityPage({ searchParams }: Props) {
                         : null;
                       return (
                         <tr key={rep.id} className={isMissingSubmission ? "row-missing-submission" : undefined}>
-                          <td>{rep.name}</td>
+                          <td>
+                            <div className="table-cell-stack">
+                              <span>{rep.name}</span>
+                              <Link className="table-inline-link" href={`/reps/${rep.id}?month=${activityDate.slice(0, 7)}` as Route}>Profile</Link>
+                            </div>
+                          </td>
                           <td>
                             {missingUpdateHref ? (
                               <Link href={missingUpdateHref}>
@@ -439,7 +444,12 @@ export default async function ActivityPage({ searchParams }: Props) {
                         : null;
                       return (
                         <tr key={rep.id} className={isMissingSubmission ? "row-missing-submission" : undefined}>
-                          <td>{rep.name}</td>
+                          <td>
+                            <div className="table-cell-stack">
+                              <span>{rep.name}</span>
+                              <Link className="table-inline-link" href={`/reps/${rep.id}?month=${activityDate.slice(0, 7)}` as Route}>Profile</Link>
+                            </div>
+                          </td>
                           <td>
                             {missingUpdateHref ? (
                               <Link href={missingUpdateHref}>

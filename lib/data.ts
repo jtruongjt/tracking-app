@@ -1,7 +1,40 @@
 import { getCurrentMonthKey } from "@/lib/date";
 import { buildDashboardRows, buildTeamRollup } from "@/lib/scoring";
 import { getSupabaseAnonServerClient, getSupabaseServiceClient } from "@/lib/supabase/server";
-import { DailyActivity, DailyActivityExemption, DailyActivityExemptionStatus, SubTeam, Team } from "@/lib/types";
+import {
+  DailyActivity,
+  DailyActivityExemption,
+  DailyActivityExemptionStatus,
+  Rep,
+  RepActivityHistoryRow,
+  RepPerformanceHistoryRow,
+  SubTeam,
+  Team
+} from "@/lib/types";
+
+function safeAttainment(actual: number, target: number): number {
+  if (target <= 0) return 0;
+  return actual / target;
+}
+
+function getPaceStatus(actual: number, target: number): "on_track" | "at_risk" | "behind" {
+  if (target <= 0) return "on_track";
+  const ratio = actual / target;
+  if (ratio >= 1) return "on_track";
+  if (ratio >= 0.9) return "at_risk";
+  return "behind";
+}
+
+function getWeightedPaceStatus(weightedScore: number): "on_track" | "at_risk" | "behind" {
+  if (weightedScore >= 100) return "on_track";
+  if (weightedScore >= 90) return "at_risk";
+  return "behind";
+}
+
+function teamWeightedScore(team: Team, tqrAttainment: number, nlAttainment: number | null): number {
+  if (team === "expansion") return tqrAttainment * 100;
+  return ((nlAttainment ?? 0) * 0.7 + tqrAttainment * 0.3) * 100;
+}
 
 export async function getActiveReps() {
   const supabase = getSupabaseAnonServerClient();
@@ -10,6 +43,19 @@ export async function getActiveReps() {
     throw new Error(error.message);
   }
   return (data ?? []) as Array<{ id: string; name: string; team: Team; sub_team: SubTeam; active: boolean }>;
+}
+
+export async function getRepById(repId: string) {
+  const supabase = getSupabaseAnonServerClient();
+  const { data, error } = await supabase
+    .from("rep")
+    .select("id,name,team,sub_team,active")
+    .eq("id", repId)
+    .maybeSingle();
+  if (error) {
+    throw new Error(error.message);
+  }
+  return (data ?? null) as Rep | null;
 }
 
 export async function getCurrentTotalsForMonth(month = getCurrentMonthKey()) {
@@ -56,6 +102,56 @@ export async function getDashboardData(month = getCurrentMonthKey()) {
   };
 }
 
+export async function getRepPerformanceHistory(rep: Pick<Rep, "id" | "team">) {
+  const supabase = getSupabaseAnonServerClient();
+  const [targetsResult, totalsResult] = await Promise.all([
+    supabase
+      .from("monthly_target")
+      .select("month,tqr_target,nl_target")
+      .eq("rep_id", rep.id)
+      .order("month", { ascending: false }),
+    supabase
+      .from("current_totals")
+      .select("month,tqr_actual,nl_actual")
+      .eq("rep_id", rep.id)
+      .order("month", { ascending: false })
+  ]);
+
+  if (targetsResult.error) throw new Error(targetsResult.error.message);
+  if (totalsResult.error) throw new Error(totalsResult.error.message);
+
+  const targetMap = new Map((targetsResult.data ?? []).map((row) => [row.month, row]));
+  const totalsMap = new Map((totalsResult.data ?? []).map((row) => [row.month, row]));
+  const months = new Set<string>([...targetMap.keys(), ...totalsMap.keys()]);
+
+  return Array.from(months)
+    .sort((a, b) => b.localeCompare(a))
+    .map((month): RepPerformanceHistoryRow => {
+      const target = targetMap.get(month);
+      const total = totalsMap.get(month);
+      const tqrTarget = Number(target?.tqr_target ?? 0);
+      const tqrActual = Number(total?.tqr_actual ?? 0);
+      const nlTarget = rep.team === "new_logo" ? (target?.nl_target === null || target?.nl_target === undefined ? null : Number(target.nl_target)) : null;
+      const nlActual = rep.team === "new_logo" ? (total?.nl_actual === null || total?.nl_actual === undefined ? null : Number(total.nl_actual)) : null;
+      const tqrAttainment = safeAttainment(tqrActual, tqrTarget);
+      const nlAttainment = rep.team === "new_logo" && nlTarget !== null ? safeAttainment(nlActual ?? 0, nlTarget) : null;
+      const weightedScore = teamWeightedScore(rep.team, tqrAttainment, nlAttainment);
+      const paceStatus = rep.team === "expansion" ? getPaceStatus(tqrActual, tqrTarget) : getWeightedPaceStatus(weightedScore);
+
+      return {
+        month,
+        tqrTarget,
+        tqrActual,
+        tqrAttainment,
+        nlTarget,
+        nlActual,
+        nlAttainment,
+        weightedScore,
+        paceStatus
+      };
+    });
+}
+
 export async function upsertCurrentTotals(input: {
   repId: string;
   month: string;
@@ -96,6 +192,51 @@ export async function getDailyActivityForRange(startDate: string, endDate: strin
 
   if (error) throw new Error(error.message);
   return (data ?? []) as DailyActivity[];
+}
+
+export async function getRepActivityHistory(repId: string, startDate: string, endDate: string) {
+  const supabase = getSupabaseAnonServerClient();
+  const [activityResult, exemptionResult] = await Promise.all([
+    supabase
+      .from("daily_activity")
+      .select("activity_date,sdr_events,events_created,events_held,notes,updated_at")
+      .eq("rep_id", repId)
+      .gte("activity_date", startDate)
+      .lte("activity_date", endDate)
+      .order("activity_date", { ascending: false }),
+    supabase
+      .from("daily_activity_exemption")
+      .select("activity_date,status,note")
+      .eq("rep_id", repId)
+      .gte("activity_date", startDate)
+      .lte("activity_date", endDate)
+      .order("activity_date", { ascending: false })
+  ]);
+
+  if (activityResult.error) throw new Error(activityResult.error.message);
+  if (exemptionResult.error) throw new Error(exemptionResult.error.message);
+
+  const activityMap = new Map((activityResult.data ?? []).map((row) => [row.activity_date, row]));
+  const exemptionMap = new Map((exemptionResult.data ?? []).map((row) => [row.activity_date, row]));
+  const dates = new Set<string>([...activityMap.keys(), ...exemptionMap.keys()]);
+
+  return Array.from(dates)
+    .sort((a, b) => b.localeCompare(a))
+    .map((activityDate): RepActivityHistoryRow => {
+      const activity = activityMap.get(activityDate);
+      const exemption = exemptionMap.get(activityDate);
+
+      return {
+        activity_date: activityDate,
+        sdr_events: activity?.sdr_events ?? 0,
+        events_created: activity?.events_created ?? 0,
+        events_held: activity?.events_held ?? 0,
+        notes: activity?.notes ?? null,
+        updated_at: activity?.updated_at ?? "",
+        exemption_status: (exemption?.status ?? null) as DailyActivityExemptionStatus | null,
+        exemption_note: exemption?.note ?? null
+      };
+    });
 }
 
 export async function getDailyActivityExemptionsForRange(startDate: string, endDate: string) {

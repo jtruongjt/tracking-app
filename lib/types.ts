@@ -73,3 +73,26 @@ export interface DashboardRow {
   weightedGapToPace: number;
   paceStatus: PaceStatus;
 }
+
+export interface RepPerformanceHistoryRow {
+  month: string;
+  tqrTarget: number;
+  tqrActual: number;
+  tqrAttainment: number;
+  nlTarget: number | null;
+  nlActual: number | null;
+  nlAttainment: number | null;
+  weightedScore: number;
+  paceStatus: PaceStatus;
+}
+
+export interface RepActivityHistoryRow {
+  activity_date: string;
+  sdr_events: number;
+  events_created: number;
+  events_held: number;
+  notes: string | null;
+  updated_at: string;
+  exemption_status: DailyActivityExemptionStatus | null;
+  exemption_note: string | null;
+}

@@ -160,7 +160,10 @@ export default async function DashboardPage({ searchParams }: Props) {
                         rows.map((row) => (
                           <tr key={row.repId}>
                             <td>
-                              <Link className="table-link-inherit" href={`/update?month=${month}&repId=${row.repId}` as Route}>{row.repName}</Link>
+                              <div className="table-cell-stack">
+                                <Link className="table-link-inherit" href={`/update?month=${month}&repId=${row.repId}` as Route}>{row.repName}</Link>
+                                <Link className="table-inline-link" href={`/reps/${row.repId}?month=${month}` as Route}>Profile</Link>
+                              </div>
                             </td>
                             <td className="num">{formatCurrency(row.tqrActual)} / {formatCurrency(row.tqrTarget)}</td>
                             <td className="num">{formatPercent(row.tqrAttainment)}</td>
@@ -209,7 +212,10 @@ export default async function DashboardPage({ searchParams }: Props) {
                         rows.map((row) => (
                           <tr key={row.repId}>
                             <td>
-                              <Link className="table-link-inherit" href={`/update?month=${month}&repId=${row.repId}` as Route}>{row.repName}</Link>
+                              <div className="table-cell-stack">
+                                <Link className="table-link-inherit" href={`/update?month=${month}&repId=${row.repId}` as Route}>{row.repName}</Link>
+                                <Link className="table-inline-link" href={`/reps/${row.repId}?month=${month}` as Route}>Profile</Link>
+                              </div>
                             </td>
                             <td className="num">{formatCurrency(row.tqrActual)} / {formatCurrency(row.tqrTarget)}</td>
                             <td className="num">{formatPercent(row.tqrAttainment)}</td>
