@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCurrentMonthKey, normalizeMonthParam, toDateLabel, toMonthLabel } from "@/lib/date";
+import { dateKeyToDate, getCurrentMonthKey, getWeekStartKey, normalizeMonthParam, toDateLabel, toMonthLabel, toWeekLabel } from "@/lib/date";
 import { getRepActivityHistory, getRepById, getRepPerformanceHistory } from "@/lib/data";
 import { isDailyActivityEnabled } from "@/lib/features";
 import { formatCurrency, formatPercent, formatScorePercent } from "@/lib/scoring";
@@ -60,6 +60,49 @@ function summarizeActivityRows(rows: RepActivityHistoryRow[]) {
   );
 }
 
+function groupActivityRowsByWeek(rows: RepActivityHistoryRow[]) {
+  const groups: Array<{
+    weekStart: string;
+    rows: RepActivityHistoryRow[];
+    summary: {
+      sdrEvents: number;
+      eventsCreated: number;
+      eventsHeld: number;
+      submittedDays: number;
+      exemptDays: number;
+    };
+  }> = [];
+
+  for (const row of rows) {
+    const weekStart = getWeekStartKey(dateKeyToDate(row.activity_date));
+    const currentGroup = groups[groups.length - 1];
+
+    if (!currentGroup || currentGroup.weekStart !== weekStart) {
+      groups.push({
+        weekStart,
+        rows: [row],
+        summary: {
+          sdrEvents: row.sdr_events,
+          eventsCreated: row.events_created,
+          eventsHeld: row.events_held,
+          submittedDays: row.updated_at ? 1 : 0,
+          exemptDays: row.exemption_status ? 1 : 0
+        }
+      });
+      continue;
+    }
+
+    currentGroup.rows.push(row);
+    currentGroup.summary.sdrEvents += row.sdr_events;
+    currentGroup.summary.eventsCreated += row.events_created;
+    currentGroup.summary.eventsHeld += row.events_held;
+    currentGroup.summary.submittedDays += row.updated_at ? 1 : 0;
+    currentGroup.summary.exemptDays += row.exemption_status ? 1 : 0;
+  }
+
+  return groups;
+}
+
 export default async function RepProfilePage({ params, searchParams }: Props) {
   const { repId } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
@@ -90,6 +133,7 @@ export default async function RepProfilePage({ params, searchParams }: Props) {
       paceStatus: "on_track" as const
     };
   const activitySummary = summarizeActivityRows(activityHistory);
+  const weeklyActivityGroups = groupActivityRowsByWeek(activityHistory);
 
   return (
     <div className="grid">
@@ -209,44 +253,61 @@ export default async function RepProfilePage({ params, searchParams }: Props) {
             </article>
           </section>
           {isDailyActivityEnabled() ? (
-            <div className="table-wrap">
-              <table className="table table-striped table-compact">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th className="num">SDR</th>
-                    <th className="num">Created</th>
-                    <th className="num">Held</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activityHistory.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="muted">No recent activity found yet.</td>
-                    </tr>
-                  ) : (
-                    activityHistory.map((row) => (
-                      <tr key={row.activity_date}>
-                        <td>{toDateLabel(row.activity_date)}</td>
-                        <td>
-                          {row.exemption_status ? (
-                            <span className="badge badge-info">{labelForExemptionStatus(row.exemption_status)}</span>
-                          ) : row.updated_at ? (
-                            <span className="badge badge-submitted">Submitted</span>
-                          ) : (
-                            <span className="badge badge-upcoming">No entry</span>
-                          )}
-                        </td>
-                        <td className="num">{row.sdr_events}</td>
-                        <td className="num">{row.events_created}</td>
-                        <td className="num">{row.events_held}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            weeklyActivityGroups.length === 0 ? (
+              <p className="muted">No recent activity found yet.</p>
+            ) : (
+              <div className="rep-activity-weeks">
+                {weeklyActivityGroups.map((group) => (
+                  <section key={group.weekStart} className="rep-activity-week">
+                    <div className="rep-activity-week-header">
+                      <div>
+                        <h4>{toWeekLabel(group.weekStart)}</h4>
+                        <p className="muted">{group.rows.length} entries for this week</p>
+                      </div>
+                      <div className="rep-activity-week-subtotals">
+                        <span>Submitted: {group.summary.submittedDays}</span>
+                        <span>Exempt: {group.summary.exemptDays}</span>
+                        <span>SDR: {group.summary.sdrEvents.toLocaleString()}</span>
+                        <span>Created: {group.summary.eventsCreated.toLocaleString()}</span>
+                        <span>Held: {group.summary.eventsHeld.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <div className="table-wrap">
+                      <table className="table table-striped table-compact">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th className="num">SDR</th>
+                            <th className="num">Created</th>
+                            <th className="num">Held</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.rows.map((row) => (
+                            <tr key={row.activity_date}>
+                              <td>{toDateLabel(row.activity_date)}</td>
+                              <td>
+                                {row.exemption_status ? (
+                                  <span className="badge badge-info">{labelForExemptionStatus(row.exemption_status)}</span>
+                                ) : row.updated_at ? (
+                                  <span className="badge badge-submitted">Submitted</span>
+                                ) : (
+                                  <span className="badge badge-upcoming">No entry</span>
+                                )}
+                              </td>
+                              <td className="num">{row.sdr_events}</td>
+                              <td className="num">{row.events_created}</td>
+                              <td className="num">{row.events_held}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )
           ) : (
             <p className="muted">Daily activity tracking is disabled in this environment.</p>
           )}
