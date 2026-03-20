@@ -5,6 +5,7 @@ import { ActivityFilterForm } from "@/components/activity-filter-form";
 import { addDays, dateKeyToDate, getCurrentDateKey, getWeekStartKey, normalizeDateParam, toDateLabel, toWeekLabel } from "@/lib/date";
 import { getActiveReps, getDailyActivityExemptionsForRange, getDailyActivityForDate, getDailyActivityForRange } from "@/lib/data";
 import { isDailyActivityEnabled } from "@/lib/features";
+import { allSubTeams, expansionSubTeams, newLogoSubTeams, teamForSubTeam } from "@/lib/teams";
 import { DailyActivityExemptionStatus, SubTeam, Team } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -26,20 +27,6 @@ type Props = {
         subTeam?: string | string[];
       }>;
 };
-
-const expansionSubTeams: SubTeam[] = ["team_lucy", "team_ryan", "team_mike", "team_bridger"];
-const newLogoSubTeams: SubTeam[] = ["team_justin", "team_kyra", "team_sydney"];
-const allSubTeams: SubTeam[] = [...expansionSubTeams, ...newLogoSubTeams];
-
-function labelForSubTeam(subTeam: SubTeam): string {
-  if (subTeam === "team_lucy") return "Team Lucy";
-  if (subTeam === "team_ryan") return "Team Ryan";
-  if (subTeam === "team_mike") return "Team Mike";
-  if (subTeam === "team_bridger") return "Team Bridger";
-  if (subTeam === "team_justin") return "Team Justin";
-  if (subTeam === "team_sydney") return "Team Sydney";
-  return "Team Kyra";
-}
 
 function normalizeTeamParam(value?: string | string[]): Team | "all" {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -81,8 +68,9 @@ export default async function ActivityPage({ searchParams }: Props) {
   const resolvedSearchParams = searchParams ? await Promise.resolve(searchParams) : undefined;
   const rawView = Array.isArray(resolvedSearchParams?.view) ? resolvedSearchParams?.view[0] : resolvedSearchParams?.view;
   const view = rawView === "week" ? "week" : "day";
-  const teamFilter = normalizeTeamParam(resolvedSearchParams?.team);
   const subTeamFilter = normalizeSubTeamParam(resolvedSearchParams?.subTeam);
+  const teamParam = normalizeTeamParam(resolvedSearchParams?.team);
+  const teamFilter = subTeamFilter === "all" ? teamParam : teamForSubTeam(subTeamFilter);
   const selectedDate = normalizeDateParam(resolvedSearchParams?.date);
   const selectedWeekStart = normalizeDateParam(resolvedSearchParams?.weekStart);
   const activityDate = selectedDate ?? getCurrentDateKey();
