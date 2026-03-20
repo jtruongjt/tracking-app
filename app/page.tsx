@@ -2,7 +2,8 @@ import type { Route } from "next";
 import Link from "next/link";
 import { getCurrentMonthKey, normalizeMonthParam, toMonthLabel } from "@/lib/date";
 import { getDashboardData } from "@/lib/data";
-import { formatCurrency, formatPercent, formatScorePercent } from "@/lib/scoring";
+import { buildTeamRollup, formatCurrency, formatPercent, formatScorePercent } from "@/lib/scoring";
+import { allSubTeams, expansionSubTeams, labelForSubTeam, newLogoSubTeams, teamForSubTeam } from "@/lib/teams";
 import { PaceBadge } from "@/components/pace-badge";
 import { DashboardFilterForm } from "@/components/dashboard-filter-form";
 import { DashboardRow, SubTeam, Team } from "@/lib/types";
@@ -14,10 +15,12 @@ type Props = {
     | {
         month?: string | string[];
         team?: string | string[];
+        subTeam?: string | string[];
       }
     | Promise<{
         month?: string | string[];
         team?: string | string[];
+        subTeam?: string | string[];
       }>;
 };
 
@@ -27,14 +30,10 @@ function normalizeTeamParam(value?: string | string[]): Team | "all" {
   return "all";
 }
 
-function subTeamLabel(subTeam: SubTeam): string {
-  if (subTeam === "team_lucy") return "Team Lucy";
-  if (subTeam === "team_ryan") return "Team Ryan";
-  if (subTeam === "team_mike") return "Team Mike";
-  if (subTeam === "team_bridger") return "Team Bridger";
-  if (subTeam === "team_justin") return "Team Justin";
-  if (subTeam === "team_sydney") return "Team Sydney";
-  return "Team Kyra";
+function normalizeSubTeamParam(value?: string | string[]): SubTeam | "all" {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (!raw || raw === "all") return "all";
+  return allSubTeams.includes(raw as SubTeam) ? (raw as SubTeam) : "all";
 }
 
 function filterBySubTeam(rows: DashboardRow[], subTeam: SubTeam): DashboardRow[] {
@@ -58,10 +57,17 @@ function renderScoreGap(gapValue: number): string {
 export default async function DashboardPage({ searchParams }: Props) {
   const resolvedSearchParams = searchParams ? await Promise.resolve(searchParams) : undefined;
   const selectedMonth = normalizeMonthParam(resolvedSearchParams?.month);
-  const teamFilter = normalizeTeamParam(resolvedSearchParams?.team);
+  const subTeamFilter = normalizeSubTeamParam(resolvedSearchParams?.subTeam);
+  const teamParam = normalizeTeamParam(resolvedSearchParams?.team);
+  const teamFilter = subTeamFilter === "all" ? teamParam : teamForSubTeam(subTeamFilter);
   const month = selectedMonth ?? getCurrentMonthKey();
   const data = await getDashboardData(month);
-  const rows = teamFilter === "all" ? data.rows : data.rows.filter((r) => r.team === teamFilter);
+  const rows = data.rows.filter((row) => {
+    if (teamFilter !== "all" && row.team !== teamFilter) return false;
+    if (subTeamFilter !== "all" && row.subTeam !== subTeamFilter) return false;
+    return true;
+  });
+  const rollup = buildTeamRollup(rows);
   const expansionRows = rows.filter((r) => r.team === "expansion");
   const newLogoRows = rows.filter((r) => r.team === "new_logo");
   const showExpansion = teamFilter === "all" || teamFilter === "expansion";
@@ -69,15 +75,30 @@ export default async function DashboardPage({ searchParams }: Props) {
   const atRiskCount = rows.filter((row) => row.paceStatus === "at_risk").length;
   const behindCount = rows.filter((row) => row.paceStatus === "behind").length;
   const onTrackCount = rows.filter((row) => row.paceStatus === "on_track").length;
-  const teamsLabel = teamFilter === "all" ? "All Teams" : teamFilter === "expansion" ? "Expansion" : "New Logo";
+  const teamsLabel =
+    subTeamFilter !== "all"
+      ? labelForSubTeam(subTeamFilter)
+      : teamFilter === "all"
+        ? "All Teams"
+        : teamFilter === "expansion"
+          ? "Expansion"
+          : "New Logo";
+  const subTeamOptions =
+    teamFilter === "expansion"
+      ? expansionSubTeams
+      : teamFilter === "new_logo"
+        ? newLogoSubTeams
+        : allSubTeams;
+  const visibleExpansionSubTeams = subTeamFilter === "all" ? expansionSubTeams : expansionSubTeams.filter((subTeam) => subTeam === subTeamFilter);
+  const visibleNewLogoSubTeams = subTeamFilter === "all" ? newLogoSubTeams : newLogoSubTeams.filter((subTeam) => subTeam === subTeamFilter);
 
   return (
     <div className="grid">
       <div className="card toolbar-card">
         <h2>{toMonthLabel(month)} Dashboard</h2>
         <p className="muted">Scores: Expansion = TQR only. New Logo = 70% NL + 30% TQR.</p>
-        <p className="muted">Use filters to view all teams or a single team.</p>
-        <DashboardFilterForm month={month} team={teamFilter} />
+        <p className="muted">Use filters to view all teams, a single team, or one sub team.</p>
+        <DashboardFilterForm month={month} team={teamFilter} subTeam={subTeamFilter} subTeamOptions={subTeamOptions} />
       </div>
 
       <section className="kpi-grid">
@@ -100,15 +121,15 @@ export default async function DashboardPage({ searchParams }: Props) {
           <article className="kpi-card">
             <h3>Expansion TQR Attainment</h3>
             <p className="kpi-value">
-              {formatPercent(data.rollup.expansion.tqrTarget > 0 ? data.rollup.expansion.tqrActual / data.rollup.expansion.tqrTarget : 0)}
+              {formatPercent(rollup.expansion.tqrTarget > 0 ? rollup.expansion.tqrActual / rollup.expansion.tqrTarget : 0)}
             </p>
-            <p className="kpi-note">{formatCurrency(data.rollup.expansion.tqrActual)} actual</p>
+            <p className="kpi-note">{formatCurrency(rollup.expansion.tqrActual)} actual</p>
           </article>
         ) : null}
         {showNewLogo ? (
           <article className="kpi-card">
             <h3>New Logo Weighted Avg</h3>
-            <p className="kpi-value">{formatScorePercent(data.rollup.newLogo.weightedAverage)}</p>
+            <p className="kpi-value">{formatScorePercent(rollup.newLogo.weightedAverage)}</p>
             <p className="kpi-note">NL + TQR blend</p>
           </article>
         ) : null}
@@ -118,16 +139,16 @@ export default async function DashboardPage({ searchParams }: Props) {
         {showExpansion ? (
           <section className="card">
             <h3>Expansion Rollup</h3>
-            <p>TQR: {formatCurrency(data.rollup.expansion.tqrActual)} / {formatCurrency(data.rollup.expansion.tqrTarget)}</p>
-            <p>TQR Attainment: {formatPercent(data.rollup.expansion.tqrTarget > 0 ? data.rollup.expansion.tqrActual / data.rollup.expansion.tqrTarget : 0)}</p>
+            <p>TQR: {formatCurrency(rollup.expansion.tqrActual)} / {formatCurrency(rollup.expansion.tqrTarget)}</p>
+            <p>TQR Attainment: {formatPercent(rollup.expansion.tqrTarget > 0 ? rollup.expansion.tqrActual / rollup.expansion.tqrTarget : 0)}</p>
           </section>
         ) : null}
         {showNewLogo ? (
           <section className="card">
             <h3>New Logo Rollup</h3>
-            <p>TQR: {formatCurrency(data.rollup.newLogo.tqrActual)} / {formatCurrency(data.rollup.newLogo.tqrTarget)}</p>
-            <p>NL: {data.rollup.newLogo.nlActual.toLocaleString()} / {data.rollup.newLogo.nlTarget.toLocaleString()}</p>
-            <p>Avg Weighted Score: {formatScorePercent(data.rollup.newLogo.weightedAverage)}</p>
+            <p>TQR: {formatCurrency(rollup.newLogo.tqrActual)} / {formatCurrency(rollup.newLogo.tqrTarget)}</p>
+            <p>NL: {rollup.newLogo.nlActual.toLocaleString()} / {rollup.newLogo.nlTarget.toLocaleString()}</p>
+            <p>Avg Weighted Score: {formatScorePercent(rollup.newLogo.weightedAverage)}</p>
           </section>
         ) : null}
       </div>
@@ -135,11 +156,11 @@ export default async function DashboardPage({ searchParams }: Props) {
       {showExpansion ? (
         <section className="card">
           <h3>Expansion Tracking</h3>
-          {(["team_lucy", "team_ryan", "team_mike", "team_bridger"] as SubTeam[]).map((subTeam) => {
+          {visibleExpansionSubTeams.map((subTeam) => {
             const rows = filterBySubTeam(expansionRows, subTeam);
             return (
               <div key={subTeam} style={{ marginTop: "1rem" }}>
-                <h4>{subTeamLabel(subTeam)}</h4>
+                <h4>{labelForSubTeam(subTeam)}</h4>
                 <div className="table-wrap">
                   <table className="table">
                     <thead>
@@ -184,11 +205,11 @@ export default async function DashboardPage({ searchParams }: Props) {
       {showNewLogo ? (
         <section className="card">
           <h3>New Logo Tracking</h3>
-          {(["team_justin", "team_kyra", "team_sydney"] as SubTeam[]).map((subTeam) => {
+          {visibleNewLogoSubTeams.map((subTeam) => {
             const rows = filterBySubTeam(newLogoRows, subTeam);
             return (
               <div key={subTeam} style={{ marginTop: "1rem" }}>
-                <h4>{subTeamLabel(subTeam)}</h4>
+                <h4>{labelForSubTeam(subTeam)}</h4>
                 <div className="table-wrap">
                   <table className="table">
                     <thead>

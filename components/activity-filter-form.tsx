@@ -30,11 +30,8 @@ export function ActivityFilterForm({
   }
 
   function submitForTeamChange() {
-    const nextTeam = teamRef.current?.value as Team | "all" | undefined;
-    const currentSubTeam = subTeamRef.current?.value as SubTeam | "all" | undefined;
-
-    if (nextTeam && nextTeam !== "all" && currentSubTeam && currentSubTeam !== "all" && teamForSubTeam(currentSubTeam) !== nextTeam) {
-      subTeamRef.current!.value = "all";
+    if (subTeamRef.current) {
+      subTeamRef.current.value = "all";
     }
 
     submitOnChange();
